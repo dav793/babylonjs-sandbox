@@ -1,0 +1,21 @@
+version: '3.0' 
+
+services:
+  game-client:
+    container_name: ${CLIENT_CONTAINER_NAME}
+    image: ${CLIENT_CONTAINER_NAME}
+    build: 
+      context: ${WORKING_DIR}
+      dockerfile: babylon-docker/Dockerfile
+    restart: "no"
+    network_mode: "bridge"
+    volumes:
+      - project-volume:/projects/babylonjs-sandbox
+    ports:
+      - "4200:4200"
+    command: [ "./client/_install.sh" ]
+    
+volumes:
+  project-volume:
+    external: true
+    name: ${VOLUME_NAME}
