@@ -30,6 +30,10 @@ export class EngineService {
     return new BABYLON.Scene(engine);
   }
 
+  resize() {
+    this.engine.resize();
+  }
+
   startRenderLoop() {
     var scene = this.scene;
 

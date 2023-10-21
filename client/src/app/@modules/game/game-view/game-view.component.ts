@@ -32,17 +32,12 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
   startRenderLoop(): void {
     this.ngZone.runOutsideAngular(() => {
 
-      if (document.readyState !== 'loading') {
+      if (document.readyState !== 'loading')
         this.engineService.startRenderLoop();
-      } else {
-        window.addEventListener('DOMContentLoaded', () => {
-          this.engineService.startRenderLoop();
-        });
-      }
+      else
+        window.addEventListener('DOMContentLoaded', () => this.engineService.startRenderLoop());
 
-      window.addEventListener('resize', () => {
-        // this.engineService.resize(window.innerWidth, window.innerHeight);
-      });
+      window.addEventListener('resize', () => this.engineService.resize());
       
     });
   }
