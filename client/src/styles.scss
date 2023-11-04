@@ -6,3 +6,11 @@ html, body {
     margin: 0;
     padding: 0;
 }
+
+app-game-view {
+    height: 100%;
+}
+
+#game-canvas {
+    touch-action: none;
+}
