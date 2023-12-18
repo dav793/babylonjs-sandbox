@@ -99,4 +99,8 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
 
 * Idle run (keep containers open):
 
-    Change instances of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
+    ```bash
+    docker compose --env-file .env -f babylon-docker/docker-compose.keep-open.yml up
+    ```
+
+    What it does: Changes instance of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
