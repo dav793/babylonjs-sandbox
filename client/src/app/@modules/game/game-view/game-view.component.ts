@@ -27,7 +27,7 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
   setup() {
     this.engineService.setupEngine( this.canvas );
     this.startRenderLoop();
-    // this.engineService.showInspector();
+    this.engineService.showInspector();
   }
 
   startRenderLoop(): void {

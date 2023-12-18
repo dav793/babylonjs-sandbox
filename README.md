@@ -99,4 +99,16 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
 
 * Idle run (keep containers open):
 
-    Change instances of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
+    ```bash
+    docker compose --env-file .env -f babylon-docker/docker-compose.keep-open.yml up
+    ```
+
+    What it does: Changes instance of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
+
+## Troubleshooting
+
+* Module not found / Can't resolve module
+    1. delete node modules folder with `rm -rf node_modules`
+    2. delete package-lock.json `rm -f package-lock.json`
+    3. clean up npm cache `npm cache clean --force` (try again if it fails)
+    4. install packages again `npm install`
