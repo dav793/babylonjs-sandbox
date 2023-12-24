@@ -29,16 +29,13 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
   }
 
   setup() {
+    // setup + start engine
     this.engineService.setupEngine( this.canvas );
     this.startRenderLoop();
     // this.engineService.showInspector();
 
     // track fps
-    this.engineService.fpsChanges$.pipe(
-      takeUntil(this._destroy$)
-    ).subscribe(value => {
-      this.fpsCounter.nativeElement.innerHTML = value;
-    });
+    this.startMetricsTracker();
   }
 
   startRenderLoop(): void {
@@ -51,6 +48,14 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
 
       window.addEventListener('resize', () => this.engineService.resize());
       
+    });
+  }
+
+  startMetricsTracker(): void {
+    this.engineService.fpsChanges$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(value => {
+      this.fpsCounter.nativeElement.innerHTML = value;
     });
   }
 
