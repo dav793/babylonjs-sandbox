@@ -1,4 +1,5 @@
 import { Injectable, ElementRef  } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 // import entire library (legacy)...
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
@@ -17,17 +18,20 @@ export class EngineService {
 
   engine: Engine;
   scene: Scene;
+  fpsChanges$ = new BehaviorSubject<string>("");
 
   private _canvas: ElementRef<HTMLCanvasElement>;
+  private _currentFrame: number;
+  private _currentFps: number;
   private _isRunningEngine = false;
 
   constructor() { }
 
   setupEngine(canvas: ElementRef<HTMLCanvasElement>) {
 
+    this._canvas = canvas;
     this.engine = new Engine(canvas.nativeElement, true);
     this.scene = this.createDefaultScene(this.engine);
-    this._canvas = canvas;
 
     this.runExampleScene();
 
@@ -45,16 +49,31 @@ export class EngineService {
     if (this._isRunningEngine)
       return; 
     this._isRunningEngine = true;
+    this._currentFrame = 0;
 
     const scene = this.scene;
 
-    this.engine.runRenderLoop(function() {
+    this.engine.runRenderLoop(() => {
       scene.render();
+      this.updateMetrics();
     });
   }
 
   showInspector() {
     Inspector.Show(this.scene, {});
+  }
+
+  updateMetrics() {
+    if (this._currentFrame % 50 === 0) {   // throttle updates to save resources
+      this._currentFps = this.engine.getFps();
+      if (this._currentFps === Infinity)
+        return;
+
+      this.fpsChanges$.next(`FPS: ${this._currentFps.toFixed()}`);
+      // this.fpsChanges$.next(`FR: ${this._currentFrame}`);
+    }
+
+    this._currentFrame = this._currentFrame > 1000000 ? 0 : this._currentFrame + 1;
   }
 
   runExampleScene() {
