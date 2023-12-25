@@ -4,10 +4,12 @@ import { CommonModule } from '@angular/common';
 import { EngineModule } from '../engine/engine.module';
 
 import { GameViewComponent } from './game-view/game-view.component';
+import { MetricsComponent } from './metrics/metrics.component';
 
 @NgModule({
   declarations: [
-    GameViewComponent
+    GameViewComponent,
+    MetricsComponent
   ],
   exports: [
     GameViewComponent

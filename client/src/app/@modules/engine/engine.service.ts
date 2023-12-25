@@ -79,7 +79,7 @@ export class EngineService {
   runExampleScene() {
 
     // set light
-    const light = new HemisphericLight("myLight", new Vector3(1, 1, 1), this.scene);
+    const light = new HemisphericLight("myLight", new Vector3(1, 2, -1), this.scene);
     light.intensity = 0.85;
 
     // set camera

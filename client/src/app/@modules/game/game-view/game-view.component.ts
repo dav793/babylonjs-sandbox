@@ -11,7 +11,6 @@ import { EngineService } from '../../engine/engine.service';
 export class GameViewComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('canvas', { static: true }) private canvas: ElementRef<HTMLCanvasElement>;
-  @ViewChild('fpsCounter', { static: true }) private fpsCounter: ElementRef<HTMLElement>;
 
   private _destroy$ = new Subject<void>();
 
@@ -33,9 +32,6 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     this.engineService.setupEngine( this.canvas );
     this.startRenderLoop();
     // this.engineService.showInspector();
-
-    // track fps
-    this.startMetricsTracker();
   }
 
   startRenderLoop(): void {
@@ -51,12 +47,8 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  startMetricsTracker(): void {
-    this.engineService.fpsChanges$.pipe(
-      takeUntil(this._destroy$)
-    ).subscribe(value => {
-      this.fpsCounter.nativeElement.innerHTML = value;
-    });
+  get fpsChanges$(): Observable<string> {
+    return this.engineService.fpsChanges$;
   }
 
 }
