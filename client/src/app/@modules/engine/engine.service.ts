@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Color3, ShaderMaterial } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -24,6 +24,16 @@ export class EngineService {
   private _currentFrame: number;
   private _currentFps: number;
   private _isRunningEngine = false;
+
+  private _renderer: any;
+
+  private pixelAlignedPanning = true;
+  private normalEdgeStrength = 0.3;
+  private depthEdgeStrength = 0.4;
+  // private pixelSize = 1;
+  private pixelSize = 6;
+  private width = window.innerWidth;
+  private height = window.innerHeight;
 
   constructor() { }
 
@@ -87,6 +97,8 @@ export class EngineService {
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(this._canvas.nativeElement, true);
 
+    this._renderer = this.scene.enableDepthRenderer();
+
     // create custom model with custom material
     this.createDioramaModelAsync();
   }
@@ -103,12 +115,32 @@ export class EngineService {
     myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
     models.meshes[2].material = myMaterial_base;
 
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/default', {
+    // const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/default', {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/pixellated', {
       attributes: ["position", "uv"],
       uniforms: ["worldViewProjection"]
     });
 
-    customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
+    const resX = this.width / this.pixelSize;
+    const resY = this.height / this.pixelSize;
+    customShaderMaterial.setVector4("resolution", new Vector4(
+      resX,
+      resY,
+      1 / resX,
+      1 / resY
+    ));
+
+    customShaderMaterial.setFloat("normalEdgeStrength", this.normalEdgeStrength);
+    customShaderMaterial.setFloat("depthEdgeStrength", this.depthEdgeStrength);
+
+    const myDiffuseTex = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    const myDepthTex = this._renderer.getDepthMap();
+    const myNormalTex = new Texture('/assets/art/textures/Texture_01_normal.png', this.scene, true, false);
+    customShaderMaterial.setTexture("tDiffuse", myDiffuseTex);
+    customShaderMaterial.setTexture("tDepth", myDepthTex);
+    customShaderMaterial.setTexture("tNormal", myNormalTex);
+
+    // customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
     models.meshes[1].material = customShaderMaterial;
 
     // console.log('models: ', models);
