@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, ShadowGenerator, MeshBuilder, DirectionalLight, HemisphericLight, Vector3, Color3 } from '@babylonjs/core';
+import { ShadowGenerator, MeshBuilder, DirectionalLight, HemisphericLight, Vector3, Color3, Animation, CubeTexture } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -92,10 +92,22 @@ export class EngineService {
     const shadowGenerator = new ShadowGenerator(1024, dLight);
 
     // set camera
-    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, new Vector3(0, 1, 0), this.scene);
+    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.1, 16, new Vector3(0, 1, 0), this.scene);
     camera.radius = 10;
     camera.wheelPrecision = 20;
     camera.attachControl(this._canvas.nativeElement, true);
+
+    // create skybox
+    const skyboxMaterial = new StandardMaterial("skyBox", this.scene);
+    skyboxMaterial.reflectionTexture = new CubeTexture("/assets/art/skyboxes/TropicalSunnyDay", this.scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.disableLighting = true;
+    skyboxMaterial.disableLighting = true;
+
+    const skybox = MeshBuilder.CreateBox("skyBox", { size: 100.0 }, this.scene);
+    skybox.infiniteDistance = true;
+    skybox.material = skyboxMaterial;
 
     // create beach ball
     const sphere = MeshBuilder.CreateSphere("sphere", 
@@ -124,7 +136,31 @@ export class EngineService {
     ground.material = materialSand;
     ground.receiveShadows = true  // set mesh that will have shadows casted on
 
-    // set animations
+    // set rotate animation
+    const animFps = 60;
+    const rotateFrames = [
+      { frame: 0, value: 0 },
+      { frame: 45, value: Math.PI / 2 },              // 90 deg
+      { frame: 90, value: Math.PI },                  // 180 deg
+      { frame: 135, value: 3 * Math.PI / 2 },         // 270 deg
+      { frame: 180, value: 2 * Math.PI }              // 360 deg
+    ];
+    const rotateAnim = new Animation('rotateAnim', 'rotation.z', animFps, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+    rotateAnim.setKeys(rotateFrames);
+    sphere.animations.push(rotateAnim);
+
+    // set translate animation
+    const translateFrames = [
+      { frame: 0, value: new Vector3(20, 6, 0) },
+      { frame: 90, value: new Vector3(0, 1, 0) },
+      { frame: 180, value: new Vector3(-20, 6, 0) }
+    ];
+    const translateAnim = new Animation('translateAnim', 'position', animFps, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+    translateAnim.setKeys(translateFrames);
+    sphere.animations.push(translateAnim);
+
+    // start animations
+    this.scene.beginAnimation(sphere, 0, 180, true);
 
   }
 
