@@ -83,26 +83,26 @@ export class EngineService {
     light.intensity = 0.85;
 
     // set camera
-    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, Vector3.Zero(), this.scene);
+    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, new Vector3(0, 1, 0), this.scene);
+    camera.radius = 3;
+    camera.wheelPrecision = 20;
     camera.attachControl(this._canvas.nativeElement, true);
 
-    // create custom model with custom material
-    this.createDioramaModelAsync();
+    // create model
+    this.createCharacterModelAsync();
   }
 
-  async createDioramaModelAsync(): Promise<void> {
-    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Prop_Diorama_01.glb', this.scene);
-    
-    const myMaterial_main = new StandardMaterial('MatDiorama.main', this.scene);
-    myMaterial_main.diffuseTexture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    myMaterial_main.specularColor = new Color3(0.1, 0.1, 0.1);
-    models.meshes[1].material = myMaterial_main;
+  async createCharacterModelAsync(): Promise<void> {
+    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Male.glb', this.scene);
 
-    const myMaterial_base = new StandardMaterial('MatDiorama.base', this.scene);
-    myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
-    models.meshes[2].material = myMaterial_base;
+    const myMaterial = new StandardMaterial('MatMale.main', this.scene);
+    myMaterial.diffuseTexture = new Texture('/assets/art/textures/UV_MaleBody_Skin.png', this.scene, true, false);
+    myMaterial.specularColor = new Color3(0.1, 0.1, 0.1);
+    models.meshes[1].material = myMaterial;
 
-    // console.log('models: ', models);
+    models.meshes[1].rotation.y = Math.PI;  // rotate 180 deg
+
+    console.log('models: ', models);
   }
 
 }
