@@ -2,7 +2,7 @@ import { Component, NgZone, ViewChild, ElementRef, AfterViewInit, OnDestroy } fr
 import { Observable, Subject, takeUntil } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
-import { ControlsOutput } from '../controls/controls.interface';
+import { ControlsInput, ControlsOutput } from '../controls/controls.interface';
 
 @Component({
   selector: 'app-game-view',
@@ -12,6 +12,8 @@ import { ControlsOutput } from '../controls/controls.interface';
 export class GameViewComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('canvas', { static: true }) private canvas: ElementRef<HTMLCanvasElement>;
+  
+  controlsInput$ = new Subject<ControlsInput>;
 
   private _destroy$ = new Subject<void>();
 
@@ -33,6 +35,12 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     this.engineService.setupEngine( this.canvas );
     this.startRenderLoop();
     // this.engineService.showInspector();
+
+    this.engineService.targetDisabled$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(isDisabled => {
+      this.controlsInput$.next({ action: 'disableTarget', value: isDisabled });
+    });
   }
 
   startRenderLoop(): void {
@@ -60,6 +68,9 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
         break;
       case 'toggleTranslation':
         this.engineService.animateTranslation();
+        break;
+      case 'toggleFadeOut':
+        this.engineService.animateFadeOut();
         break;
     }
 

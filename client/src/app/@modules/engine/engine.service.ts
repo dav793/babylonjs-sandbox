@@ -1,5 +1,5 @@
 import { Injectable, ElementRef  } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 // import entire library (legacy)...
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
@@ -24,6 +24,8 @@ export class EngineService {
   animationFps = 60;
   rotationAnimation: Animatable = null;
   translationAnimation: Animatable = null;
+  fadeOutAnimation: Animatable = null;
+  targetDisabled$ = new Subject<boolean>();
 
   private _canvas: ElementRef<HTMLCanvasElement>;
   private _currentFrame: number;
@@ -188,6 +190,38 @@ export class EngineService {
     this.target.animations.push(translateAnim);
 
     this.translationAnimation = this.scene.beginDirectAnimation(this.target, [translateAnim], 0, 180, true);
+
+  }
+
+  async animateFadeOut(): Promise<void> {
+    
+    if (this.fadeOutAnimation)
+      return;
+
+    const fadeFrames = [
+      { frame: 0, value: 1 },
+      { frame: 180, value: 0 }
+    ];
+    const fadeAnim = new Animation('fadeAnim', 'visibility', this.animationFps, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    fadeAnim.setKeys(fadeFrames);
+    this.target.animations.push(fadeAnim);
+
+    const onAnimationEnd = () => {
+      console.log('Animation ended');
+      
+      if (this.rotationAnimation)
+        this.rotationAnimation.stop();
+      
+      if (this.translationAnimation)
+        this.translationAnimation.stop();
+      
+      this.target.setEnabled(false);
+      this.targetDisabled$.next(true);
+    };
+
+    this.fadeOutAnimation = this.scene.beginDirectAnimation(this.target, [fadeAnim], 0, 180, false, 1, onAnimationEnd);
+    await this.fadeOutAnimation.waitAsync();
+    this.fadeOutAnimation.stop();
 
   }
 

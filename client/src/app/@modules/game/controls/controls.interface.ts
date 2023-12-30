@@ -1,5 +1,10 @@
 
 export interface ControlsOutput {
-    action: 'test'|'toggleRotation'|'toggleTranslation';
+    action: 'toggleRotation'|'toggleTranslation'|'toggleFadeOut';
     value?: any; 
+}
+
+export interface ControlsInput {
+    action: 'disableTarget';
+    value?: any;
 }

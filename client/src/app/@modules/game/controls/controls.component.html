@@ -1,5 +1,6 @@
 
 <div id="control-panel">
-    <button (click)="clickToggleRotation()">Toggle Rotation</button>
-    <button (click)="clickToggleTranslation()">Toggle Translation</button>
+    <button #toggleRotationButton (click)="clickToggleRotation()">Toggle Rotation</button>
+    <button #toggleTranslationButton (click)="clickToggleTranslation()">Toggle Translation</button>
+    <button #fadeOutButton (click)="clickFadeOut()">Fade Out</button>
 </div>
