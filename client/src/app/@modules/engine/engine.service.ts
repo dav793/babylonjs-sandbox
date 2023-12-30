@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { ShadowGenerator, MeshBuilder, DirectionalLight, HemisphericLight, Vector3, Color3, Animation, CubeTexture } from '@babylonjs/core';
+import { ShadowGenerator, MeshBuilder, Mesh, DirectionalLight, HemisphericLight, Vector3, Color3, Animation, Animatable, CubeTexture } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -19,6 +19,11 @@ export class EngineService {
   engine: Engine;
   scene: Scene;
   fpsChanges$ = new BehaviorSubject<string>("");
+
+  target: Mesh;
+  animationFps = 60;
+  rotationAnimation: Animatable = null;
+  translationAnimation: Animatable = null;
 
   private _canvas: ElementRef<HTMLCanvasElement>;
   private _currentFrame: number;
@@ -110,7 +115,7 @@ export class EngineService {
     skybox.material = skyboxMaterial;
 
     // create beach ball
-    const sphere = MeshBuilder.CreateSphere("sphere", 
+    this.target = MeshBuilder.CreateSphere("sphere", 
       {diameter: 2, segments: 32}, 
       this.scene
     );
@@ -118,9 +123,9 @@ export class EngineService {
     const materialBeachBall = new StandardMaterial('MatBeachBall', this.scene);
     materialBeachBall.diffuseTexture = new Texture('/assets/art/textures/BeachBallTexture1.jpg', this.scene, true, false);
     materialBeachBall.specularColor = new Color3(0.7, 0.7, 0.7);
-    sphere.material = materialBeachBall;
-    sphere.position.y = 1;
-    shadowGenerator.addShadowCaster(sphere, true);  // set mesh that will cast shadows
+    this.target.material = materialBeachBall;
+    this.target.position.y = 1;
+    shadowGenerator.addShadowCaster(this.target, true);  // set mesh that will cast shadows
 
     // create ground
     const ground = MeshBuilder.CreateGround("ground", 
@@ -136,8 +141,18 @@ export class EngineService {
     ground.material = materialSand;
     ground.receiveShadows = true  // set mesh that will have shadows casted on
 
-    // set rotate animation
-    const animFps = 60;
+  }
+
+  animateRotation(): void {
+
+    if (this.rotationAnimation) {
+      if (this.rotationAnimation.paused)
+        this.rotationAnimation.restart();
+      else 
+        this.rotationAnimation.pause();
+      return;
+    }
+
     const rotateFrames = [
       { frame: 0, value: 0 },
       { frame: 45, value: Math.PI / 2 },              // 90 deg
@@ -145,22 +160,34 @@ export class EngineService {
       { frame: 135, value: 3 * Math.PI / 2 },         // 270 deg
       { frame: 180, value: 2 * Math.PI }              // 360 deg
     ];
-    const rotateAnim = new Animation('rotateAnim', 'rotation.z', animFps, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+    const rotateAnim = new Animation('rotateAnim', 'rotation.z', this.animationFps, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
     rotateAnim.setKeys(rotateFrames);
-    sphere.animations.push(rotateAnim);
+    this.target.animations.push(rotateAnim);
 
-    // set translate animation
+    this.rotationAnimation = this.scene.beginDirectAnimation(this.target, [rotateAnim], 0, 180, true);
+
+  }
+
+  animateTranslation(): void {
+
+    if (this.translationAnimation) {
+      if (this.translationAnimation.paused)
+        this.translationAnimation.restart();
+      else 
+        this.translationAnimation.pause();
+      return;
+    }
+
     const translateFrames = [
       { frame: 0, value: new Vector3(20, 6, 0) },
       { frame: 90, value: new Vector3(0, 1, 0) },
       { frame: 180, value: new Vector3(-20, 6, 0) }
     ];
-    const translateAnim = new Animation('translateAnim', 'position', animFps, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+    const translateAnim = new Animation('translateAnim', 'position', this.animationFps, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
     translateAnim.setKeys(translateFrames);
-    sphere.animations.push(translateAnim);
+    this.target.animations.push(translateAnim);
 
-    // start animations
-    this.scene.beginAnimation(sphere, 0, 180, true);
+    this.translationAnimation = this.scene.beginDirectAnimation(this.target, [translateAnim], 0, 180, true);
 
   }
 

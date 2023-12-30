@@ -53,7 +53,16 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
   }
 
   onControlsOutput(event: ControlsOutput): void {
-    console.log(event);
+
+    switch(event.action) {
+      case 'toggleRotation':
+        this.engineService.animateRotation();
+        break;
+      case 'toggleTranslation':
+        this.engineService.animateTranslation();
+        break;
+    }
+
   }
 
 }

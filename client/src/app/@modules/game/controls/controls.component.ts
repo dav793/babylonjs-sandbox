@@ -11,8 +11,12 @@ export class ControlsComponent {
 
   @Output('output') output = new EventEmitter<ControlsOutput>(); 
 
-  clickTest(): void {
-    this.output.emit({ action: 'test' });
+  clickToggleRotation(): void {
+    this.output.emit({ action: 'toggleRotation' });
+  }
+
+  clickToggleTranslation(): void {
+    this.output.emit({ action: 'toggleTranslation' });
   }
 
 }
