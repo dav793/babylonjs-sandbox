@@ -93,8 +93,9 @@ export class EngineService {
 
     // set camera
     const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.1, 16, new Vector3(0, 1, 0), this.scene);
-    camera.radius = 10;
-    camera.wheelPrecision = 20;
+    camera.radius = 10;           // initial zoom
+    camera.wheelPrecision = 20;   // scroll (zoom) sensitivity
+    camera.maxZ = 10000;          // render distance
     camera.attachControl(this._canvas.nativeElement, true);
 
     // create skybox
@@ -103,9 +104,8 @@ export class EngineService {
     skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
     skyboxMaterial.backFaceCulling = false;
     skyboxMaterial.disableLighting = true;
-    skyboxMaterial.disableLighting = true;
 
-    const skybox = MeshBuilder.CreateBox("skyBox", { size: 100.0 }, this.scene);
+    const skybox = MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, this.scene);
     skybox.infiniteDistance = true;
     skybox.material = skyboxMaterial;
 
