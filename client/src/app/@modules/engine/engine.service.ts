@@ -112,12 +112,14 @@ export class EngineService {
 
     // create ground
     const ground = MeshBuilder.CreateGround("ground", 
-      {width: 20, height: 20}, 
+      {width: 100, height: 100}, 
       this.scene
     );
 
     const materialSand = new StandardMaterial('MatSand', this.scene);
     materialSand.diffuseTexture = new Texture('/assets/art/textures/SandTexture1.png', this.scene, true, false);
+    (materialSand.diffuseTexture as Texture).uScale = 8.0;
+    (materialSand.diffuseTexture as Texture).vScale = 8.0;
     materialSand.specularColor = new Color3(0.1, 0.1, 0.1);
     ground.material = materialSand;
     ground.receiveShadows = true  // set mesh that will have shadows casted on
