@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Color3 } from '@babylonjs/core';
+import { SceneLoader, ShadowGenerator, MeshBuilder, DirectionalLight, HemisphericLight, Vector3, Color3 } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -78,31 +78,52 @@ export class EngineService {
 
   runExampleScene() {
 
-    // set light
-    const light = new HemisphericLight("myLight", new Vector3(1, 2, -1), this.scene);
-    light.intensity = 0.85;
+    // set hemispheric light
+    const hLight = new HemisphericLight("hemisphericLight", new Vector3(-2, 2, -2), this.scene);
+    hLight.intensity = 0.8;
+
+    // set directional light
+    const dLightDirection = new Vector3(20, -20, 20);
+    const dLight = new DirectionalLight("directionalLight", dLightDirection, this.scene);
+    dLight.position = new Vector3(0, 15, -30);
+    dLight.intensity = 0.4;
+
+    // create shadow generator
+    const shadowGenerator = new ShadowGenerator(1024, dLight);
 
     // set camera
     const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, new Vector3(0, 1, 0), this.scene);
-    camera.radius = 3;
+    camera.radius = 10;
     camera.wheelPrecision = 20;
     camera.attachControl(this._canvas.nativeElement, true);
 
-    // create model
-    this.createCharacterModelAsync();
-  }
+    // create beach ball
+    const sphere = MeshBuilder.CreateSphere("sphere", 
+      {diameter: 2, segments: 32}, 
+      this.scene
+    );
 
-  async createCharacterModelAsync(): Promise<void> {
-    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Male.glb', this.scene);
+    const materialBeachBall = new StandardMaterial('MatBeachBall', this.scene);
+    materialBeachBall.diffuseTexture = new Texture('/assets/art/textures/BeachBallTexture1.jpg', this.scene, true, false);
+    materialBeachBall.specularColor = new Color3(0.7, 0.7, 0.7);
+    sphere.material = materialBeachBall;
+    sphere.position.y = 1;
+    shadowGenerator.addShadowCaster(sphere, true);  // set mesh that will cast shadows
 
-    const myMaterial = new StandardMaterial('MatMale.main', this.scene);
-    myMaterial.diffuseTexture = new Texture('/assets/art/textures/UV_MaleBody_Skin.png', this.scene, true, false);
-    myMaterial.specularColor = new Color3(0.1, 0.1, 0.1);
-    models.meshes[1].material = myMaterial;
+    // create ground
+    const ground = MeshBuilder.CreateGround("ground", 
+      {width: 20, height: 20}, 
+      this.scene
+    );
 
-    models.meshes[1].rotation.y = Math.PI;  // rotate 180 deg
+    const materialSand = new StandardMaterial('MatSand', this.scene);
+    materialSand.diffuseTexture = new Texture('/assets/art/textures/SandTexture1.png', this.scene, true, false);
+    materialSand.specularColor = new Color3(0.1, 0.1, 0.1);
+    ground.material = materialSand;
+    ground.receiveShadows = true  // set mesh that will have shadows casted on
 
-    console.log('models: ', models);
+    // set animations
+
   }
 
 }
