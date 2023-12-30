@@ -2,6 +2,7 @@ import { Component, NgZone, ViewChild, ElementRef, AfterViewInit, OnDestroy } fr
 import { Observable, Subject, takeUntil } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
+import { ControlsOutput } from '../controls/controls.interface';
 
 @Component({
   selector: 'app-game-view',
@@ -49,6 +50,10 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
 
   get fpsChanges$(): Observable<string> {
     return this.engineService.fpsChanges$;
+  }
+
+  onControlsOutput(event: ControlsOutput): void {
+    console.log(event);
   }
 
 }
