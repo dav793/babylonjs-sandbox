@@ -2,3 +2,4 @@
 <canvas id="game-canvas" #canvas></canvas>
 
 <app-metrics [fpsChanges]="fpsChanges$"></app-metrics>
+<app-controls [input]="controlsInput$" (output)="onControlsOutput($event)"></app-controls>

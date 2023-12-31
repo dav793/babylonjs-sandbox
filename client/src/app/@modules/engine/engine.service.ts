@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Color3 } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Color3, AnimationGroup, Animatable, ISceneLoaderAsyncResult } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -13,12 +13,19 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
 
+import { ControlsLabels } from '../game/controls/controls.interface';
+
 @Injectable()
 export class EngineService {
 
   engine: Engine;
   scene: Scene;
   fpsChanges$ = new BehaviorSubject<string>("");
+  animationGroups$ = new BehaviorSubject<AnimationGroup[]>([]);
+  controlLabels$ = new BehaviorSubject<ControlsLabels>({ animation: '', inProgress: false });
+
+  characterModel: ISceneLoaderAsyncResult;
+  animationGroup: AnimationGroup;
 
   private _canvas: ElementRef<HTMLCanvasElement>;
   private _currentFrame: number;
@@ -93,16 +100,44 @@ export class EngineService {
   }
 
   async createCharacterModelAsync(): Promise<void> {
-    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Male.glb', this.scene);
+    this.characterModel = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Male.glb', this.scene);
 
     const myMaterial = new StandardMaterial('MatMale.main', this.scene);
     myMaterial.diffuseTexture = new Texture('/assets/art/textures/UV_MaleBody_Skin.png', this.scene, true, false);
     myMaterial.specularColor = new Color3(0.1, 0.1, 0.1);
-    models.meshes[1].material = myMaterial;
+    this.characterModel.meshes[1].material = myMaterial;
 
-    models.meshes[1].rotation.y = Math.PI;  // rotate 180 deg
+    this.characterModel.meshes[1].rotation.y = Math.PI;  // rotate 180 deg
 
-    console.log('models: ', models);
+    this.animationGroups$.next(this.characterModel.animationGroups);
+    this.characterModel.animationGroups[0].stop();  // stop default animation
+
+    // console.log('models: ', this.characterModel);
+  }
+
+  startAnimation(value: { uniqueId: number, name: string, loop: boolean }) {
+
+    let animationGroup: AnimationGroup;
+    this.characterModel.animationGroups.forEach(elem => {
+      elem.stop();
+      if (elem.uniqueId === value.uniqueId)
+        animationGroup = elem;
+    });
+
+    if (!animationGroup) {
+      console.error(`Animation '${value.name}' not found.`);
+      return;
+    }
+
+    animationGroup.play(value.loop);
+    this.animationGroup = animationGroup;
+    this.controlLabels$.next({ animation: value.name, inProgress: true });
+
+    animationGroup.onAnimationGroupEndObservable.addOnce(() => {
+      this.animationGroup = null;
+      this.controlLabels$.next({ animation: value.name, inProgress: false });
+    });
+    
   }
 
 }

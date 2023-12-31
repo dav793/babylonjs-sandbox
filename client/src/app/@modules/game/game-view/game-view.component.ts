@@ -2,6 +2,7 @@ import { Component, NgZone, ViewChild, ElementRef, AfterViewInit, OnDestroy } fr
 import { Observable, Subject, takeUntil } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
+import { ControlsInput, ControlsOutput } from '../controls/controls.interface';
 
 @Component({
   selector: 'app-game-view',
@@ -11,6 +12,8 @@ import { EngineService } from '../../engine/engine.service';
 export class GameViewComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('canvas', { static: true }) private canvas: ElementRef<HTMLCanvasElement>;
+
+  controlsInput$ = new Subject<ControlsInput>;
 
   private _destroy$ = new Subject<void>();
 
@@ -32,6 +35,22 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     this.engineService.setupEngine( this.canvas );
     this.startRenderLoop();
     // this.engineService.showInspector();
+
+    // setup engine listeners
+    this.engineService.animationGroups$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(animationGroups => {
+
+      this.controlsInput$.next({
+        action: 'animationGroups',
+        value: animationGroups.map(elem => ({ uniqueId: elem.uniqueId, name: elem.name }))
+      });
+
+    });
+
+    this.engineService.controlLabels$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(value => this.controlsInput$.next({ action: 'nowPlaying', value }));
   }
 
   startRenderLoop(): void {
@@ -49,6 +68,16 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
 
   get fpsChanges$(): Observable<string> {
     return this.engineService.fpsChanges$;
+  }
+
+  onControlsOutput(event: ControlsOutput): void {
+
+    switch(event.action) {
+      case 'selectAnimation':
+        this.engineService.startAnimation(event.value);
+        break;
+    }
+
   }
 
 }
