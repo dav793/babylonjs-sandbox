@@ -5,11 +5,6 @@ export interface ControlsOutput {
 }
 
 export interface ControlsInput {
-    action: 'animationNames'|'nowPlaying';
+    action: 'bodySlotModelTypeNames'|'animationNames'|'nowPlaying';
     value?: any;
-}
-
-export interface ControlsLabels {
-    animation: string,
-    inProgress: boolean
 }

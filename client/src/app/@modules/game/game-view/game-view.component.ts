@@ -37,6 +37,17 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     // this.engineService.showInspector();
 
     // setup engine listeners
+    this.engineService.characterBodySlotModelTypeNames$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(modelTypeNames => {
+
+      this.controlsInput$.next({
+        action: 'bodySlotModelTypeNames',
+        value: modelTypeNames
+      });
+
+    });
+
     this.engineService.animationNames$.pipe(
       takeUntil(this._destroy$)
     ).subscribe(animationNames => {
@@ -48,7 +59,7 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
 
     });
 
-    this.engineService.controlLabels$.pipe(
+    this.engineService.animationStatus$.pipe(
       takeUntil(this._destroy$)
     ).subscribe(value => this.controlsInput$.next({ action: 'nowPlaying', value }));
   }

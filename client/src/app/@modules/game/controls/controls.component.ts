@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { Observable, Subject, merge, takeUntil } from 'rxjs';
 
-import { ControlsInput, ControlsOutput, ControlsLabels } from './controls.interface';
+import { ControlsInput, ControlsOutput } from './controls.interface';
 
 @Component({
   selector: 'app-controls',
@@ -14,13 +14,13 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   @Output('output') output = new EventEmitter<ControlsOutput>();
 
   model: {
-    labels: ControlsLabels,
     loop: boolean,
-    animations: { name: string, selected: boolean }[]
+    animations: { name: string, selected: boolean }[],
+    bodySlotModelTypes: { name: string, selected: boolean }[]
   } = {
-    labels: null,
     loop: true,
-    animations: []
+    animations: [],
+    bodySlotModelTypes: []
   };
 
   private _inputsChanged$ = new Subject<void>();
@@ -48,8 +48,11 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   handleInput(input: ControlsInput): void {
 
     switch(input.action) {
+      case 'bodySlotModelTypeNames':
+        this.createBodySlotModelTypeOptions(input.value);
+        break;
       case 'animationNames':
-        this.createOptions(input.value);
+        this.createAnimationOptions(input.value);
         break;
       case 'nowPlaying':
         this.updateNowPlaying(input.value);
@@ -57,21 +60,39 @@ export class ControlsComponent implements OnDestroy, OnChanges {
 
   }
 
-  createOptions(values: string[]) {
-    
+  isAnimationSelected(name: string): boolean {
+    const anim = this.model.animations.find(elem => elem.name === name);
+    return anim.selected;
+  }
+
+  // INPUTS
+
+  createBodySlotModelTypeOptions(values: string[]) {
+    this.model.bodySlotModelTypes = values.map(elem => ({
+      name: elem,
+      selected: false
+    }));
+  }
+
+  createAnimationOptions(values: string[]) {
     this.model.animations = values.map(elem => ({ 
       name: elem, 
       selected: false 
     }));
-  
   }
 
-  updateNowPlaying(value: ControlsLabels) {
+  updateNowPlaying(value: { animation: string, inProgress: boolean }) {
+    if (!value || !value.animation)
+      return;
+
     setTimeout(() => {    // wrap in timeout to avoid 'ExpressionChangedAfterItWasChecked' error
-      this.model.labels = value;
+      const anim = this.model.animations.find(elem => elem.name === value.animation);
+      anim.selected = value.inProgress;
       this.cdr.detectChanges();
     });
   }
+
+  // OUTPUTS
 
   selectAnimation(name: string) {
     const animation = this.model.animations.find(elem => elem.name === name);

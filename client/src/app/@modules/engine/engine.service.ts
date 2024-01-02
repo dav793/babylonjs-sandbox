@@ -13,18 +13,19 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
 
-import { CharacterModelCollection } from './character/character-model.model';
+import { CharacterModelCollection, CharacterBodySlotModelType } from './character/character-model.model';
 import { CharacterModelFactory } from './character/character-model.factory';
-import { ControlsLabels } from '../game/controls/controls.interface';
 
 @Injectable()
 export class EngineService {
 
   engine: Engine;
   scene: Scene;
+  
   fpsChanges$ = new BehaviorSubject<string>("");
+  characterBodySlotModelTypeNames$ = new BehaviorSubject<string[]>([]);
   animationNames$ = new BehaviorSubject<string[]>([]);
-  controlLabels$ = new BehaviorSubject<ControlsLabels>({ animation: '', inProgress: false });
+  animationStatus$ = new BehaviorSubject<{ animation: string, inProgress: boolean }>({ animation: '', inProgress: false });
 
   characterModelFactory: CharacterModelFactory;
   characterModelCollection: CharacterModelCollection;
@@ -104,10 +105,14 @@ export class EngineService {
     this.characterModelCollection = await this.characterModelFactory.createCharacterModel( modelIdentifier );
     
     this.animationNames$.next( this.characterModelCollection.animationNames );
+    this.characterBodySlotModelTypeNames$.next(
+      CharacterBodySlotModelType.getNames()
+    );
+
     this.characterModelCollection.animationChanges$.pipe(
       takeUntil(this.characterModelCollection.onDestroy$)
     ).subscribe(
-      animationChanges => this.controlLabels$.next(animationChanges)
+      animationChanges => this.animationStatus$.next(animationChanges)
     );
   }
 
