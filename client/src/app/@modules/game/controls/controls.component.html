@@ -1,6 +1,12 @@
 <div id="control-panel">
     <div>
-        <p class="title">Now playing: <ng-container *ngIf="model.labels && model.labels.inProgress">'{{model.labels.animation}}'</ng-container></p>
+        <p class="title">Equipment</p>
+    </div>
+
+    
+    <div>
+        <p class="title">Animations</p>
+        <p class="subtitle">Now playing: <ng-container *ngIf="model.labels && model.labels.inProgress">'{{model.labels.animation}}'</ng-container></p>
     </div>
     <div class="checkbox">
         <label for="loop">Loop</label>
@@ -11,7 +17,7 @@
     </div>
     <div>
         <ng-container *ngFor="let animation of model.animations">
-            <button (click)="selectAnimation(animation.uniqueId)">{{animation.name}}</button>
+            <button (click)="selectAnimation(animation.name)">{{animation.name}}</button>
         </ng-container>
     </div>
 </div>

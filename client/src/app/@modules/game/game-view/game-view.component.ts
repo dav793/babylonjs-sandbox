@@ -37,13 +37,13 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     // this.engineService.showInspector();
 
     // setup engine listeners
-    this.engineService.animationGroups$.pipe(
+    this.engineService.animationNames$.pipe(
       takeUntil(this._destroy$)
-    ).subscribe(animationGroups => {
+    ).subscribe(animationNames => {
 
       this.controlsInput$.next({
-        action: 'animationGroups',
-        value: animationGroups.map(elem => ({ uniqueId: elem.uniqueId, name: elem.name }))
+        action: 'animationNames',
+        value: animationNames
       });
 
     });

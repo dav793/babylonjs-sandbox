@@ -16,7 +16,7 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   model: {
     labels: ControlsLabels,
     loop: boolean,
-    animations: { uniqueId: number, name: string, selected: boolean }[]
+    animations: { name: string, selected: boolean }[]
   } = {
     labels: null,
     loop: true,
@@ -48,7 +48,7 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   handleInput(input: ControlsInput): void {
 
     switch(input.action) {
-      case 'animationGroups':
+      case 'animationNames':
         this.createOptions(input.value);
         break;
       case 'nowPlaying':
@@ -57,11 +57,10 @@ export class ControlsComponent implements OnDestroy, OnChanges {
 
   }
 
-  createOptions(values: { uniqueId: number, name: string }[]) {
+  createOptions(values: string[]) {
     
     this.model.animations = values.map(elem => ({ 
-      uniqueId: elem.uniqueId, 
-      name: elem.name, 
+      name: elem, 
       selected: false 
     }));
   
@@ -74,10 +73,9 @@ export class ControlsComponent implements OnDestroy, OnChanges {
     });
   }
 
-  selectAnimation(uniqueId: number) {
-    const animation = this.model.animations.find(elem => elem.uniqueId === uniqueId);
+  selectAnimation(name: string) {
+    const animation = this.model.animations.find(elem => elem.name === name);
     const value = {
-      uniqueId,
       name: animation.name,
       loop: this.model.loop
     };

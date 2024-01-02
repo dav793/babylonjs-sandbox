@@ -5,7 +5,7 @@ export interface ControlsOutput {
 }
 
 export interface ControlsInput {
-    action: 'animationGroups'|'nowPlaying';
+    action: 'animationNames'|'nowPlaying';
     value?: any;
 }
 
