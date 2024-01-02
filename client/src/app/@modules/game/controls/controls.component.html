@@ -6,7 +6,8 @@
     <div>
         <ng-container *ngFor="let equipmentType of model.bodySlotModelTypes">
             <p class="select-item"
-                (click)="selectEquippable(equipmentType.name)" 
+                (click)="toggleEquippable(equipmentType.name)" 
+                [ngClass]="{'selected': isEquipmentTypeSelected(equipmentType.name)}"
             >{{equipmentType.name}}</p>
         </ng-container>
     </div>

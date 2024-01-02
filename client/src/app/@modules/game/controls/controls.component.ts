@@ -51,8 +51,8 @@ export class ControlsComponent implements OnDestroy, OnChanges {
       case 'bodySlotModelTypeNames':
         this.createBodySlotModelTypeOptions(input.value);
         break;
-      case 'equipped':
-        this.updateEquipped(input.value);
+      case 'modelChanges':
+        this.updateModelChanges(input.value);
         break;
       case 'animationNames':
         this.createAnimationOptions(input.value);
@@ -67,6 +67,11 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   isAnimationSelected(name: string): boolean {
     const anim = this.model.animations.find(elem => elem.name === name);
     return anim.selected;
+  }
+
+  isEquipmentTypeSelected(name: string): boolean {
+    const equipmentType = this.model.bodySlotModelTypes.find(elem => elem.name === name);
+    return equipmentType.selected;
   }
 
   // INPUTS
@@ -85,8 +90,12 @@ export class ControlsComponent implements OnDestroy, OnChanges {
     }));
   }
 
-  updateEquipped(value: { name: string, isEquipped: boolean }) {
-    console.log(value);
+  updateModelChanges(value: { name: string, isEquipped: boolean }) {
+    setTimeout(() => {  // wrap in timeout to avoid 'ExpressionChangedAfterItWasChecked' error
+      const modelType = this.model.bodySlotModelTypes.find(elem => elem.name === value.name);
+      modelType.selected = value.isEquipped;
+      this.cdr.detectChanges();
+    });
   }
 
   updateNowPlaying(value: { animation: string, inProgress: boolean }) {
@@ -102,8 +111,8 @@ export class ControlsComponent implements OnDestroy, OnChanges {
 
   // OUTPUTS
 
-  selectEquippable(name: string) {
-    console.log(name);
+  toggleEquippable(name: string) {
+    this.output.emit({ action: 'toggleEquippable', value: { name } });
   }
 
   selectAnimation(name: string) {

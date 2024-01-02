@@ -1,8 +1,9 @@
 import { Component, NgZone, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject, takeUntil, filter } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
 import { ControlsInput, ControlsOutput } from '../controls/controls.interface';
+import { CharacterModelOperation } from '../../engine/character/character-model.model';
 
 @Component({
   selector: 'app-game-view',
@@ -45,6 +46,16 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
       takeUntil(this._destroy$)
     ).subscribe( animationNames => this.controlsInput$.next({ action: 'animationNames', value: animationNames }) );
 
+    this.engineService.characterModelStatus$.pipe(
+      takeUntil(this._destroy$)
+    ).subscribe( modelChanges => {
+      let isEquipped = false;
+      if (modelChanges.operation === CharacterModelOperation.Added || modelChanges.operation === CharacterModelOperation.Updated)
+        isEquipped = true;
+
+      this.controlsInput$.next({ action: 'modelChanges', value: { name: modelChanges.modelName, isEquipped } });
+    });
+
     this.engineService.animationStatus$.pipe(
       takeUntil(this._destroy$)
     ).subscribe( value => this.controlsInput$.next({ action: 'nowPlaying', value }) );
@@ -73,8 +84,8 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
       case 'selectAnimation':
         this.engineService.startAnimation(event.value);
         break;
-      case 'selectEquippable':
-        // @todo: implement 'toggleEquippable'
+      case 'toggleEquippable':
+        this.engineService.toggleEquippable(event.value.name);
         break;
     }
 

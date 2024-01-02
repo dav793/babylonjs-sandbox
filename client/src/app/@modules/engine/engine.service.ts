@@ -1,5 +1,5 @@
 import { Injectable, ElementRef  } from '@angular/core';
-import { BehaviorSubject, interval, map, takeUntil, takeWhile } from 'rxjs';
+import { Subject, BehaviorSubject, interval, map, takeUntil, takeWhile } from 'rxjs';
 
 // import entire library (legacy)...
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
@@ -13,7 +13,14 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
 
-import { CharacterModelCollection, CharacterBodySlotModelType } from './character/character-model.model';
+import { 
+  CharacterModelCollection,
+  CharacterModelOperation, 
+  CharacterBodySlot,  
+  CharacterBodySlotModels,
+  CharacterBodySlotModelType,
+  CharacterBodySlotModelTypeDefinition
+} from './character/character-model.model';
 import { CharacterModelFactory } from './character/character-model.factory';
 
 @Injectable()
@@ -24,11 +31,13 @@ export class EngineService {
   
   fpsChanges$ = new BehaviorSubject<string>("");
   characterBodySlotModelTypeNames$ = new BehaviorSubject<string[]>([]);
+  characterModelStatus$ = new Subject<{ modelName: string, operation: CharacterModelOperation }>();
   animationNames$ = new BehaviorSubject<string[]>([]);
   animationStatus$ = new BehaviorSubject<{ animation: string, inProgress: boolean }>({ animation: '', inProgress: false });
 
   characterModelFactory: CharacterModelFactory;
   characterModelCollection: CharacterModelCollection;
+  characterModelIdentifier = 'MyCharacter';
 
   private _canvas: ElementRef<HTMLCanvasElement>;
   private _currentFrame: number;
@@ -101,7 +110,6 @@ export class EngineService {
     camera.attachControl(this._canvas.nativeElement, true);
 
     // create character model
-    const modelIdentifier = 'MyCharacter';
     const equipped = [
       'Male_Skin',
       'Male_Shirt',
@@ -110,11 +118,19 @@ export class EngineService {
       'Male_Sneakers',
       'Male_BaseballCap'
     ];
-    this.characterModelCollection = await this.characterModelFactory.createCharacterModel( modelIdentifier, equipped );
+    this.characterModelCollection = await this.characterModelFactory.createCharacterModel( this.characterModelIdentifier, equipped );
     
+    // emit events
     this.animationNames$.next( this.characterModelCollection.animationNames );
     this.characterBodySlotModelTypeNames$.next(
       CharacterBodySlotModelType.getNames()
+    );
+
+    // setup listeners
+    this.characterModelCollection.modelChanges$.pipe(
+      takeUntil(this.characterModelCollection.onDestroy$),
+    ).subscribe(
+      modelChanges => this.characterModelStatus$.next(modelChanges)
     );
 
     this.characterModelCollection.animationChanges$.pipe(
@@ -126,6 +142,18 @@ export class EngineService {
 
   startAnimation(value: { name: string, loop: boolean }) {
     this.characterModelCollection.startAnimation(value.name, value.loop);
+  }
+
+  async toggleEquippable(modelName: string) {
+  
+    const modelTypeDef: CharacterBodySlotModelTypeDefinition = CharacterBodySlotModelType.findByName(modelName);
+    const bodySlotModels: CharacterBodySlotModels = this.characterModelCollection.bodyParts[modelTypeDef.bodySlot];
+    
+    if (bodySlotModels.models)
+      this.characterModelFactory.destroyCollectionModel(modelTypeDef, this.characterModelCollection);
+    else
+      await this.characterModelFactory.createCollectionModel(modelTypeDef, this.characterModelCollection);
+  
   }
 
   // startAnimation(value: { uniqueId: number, name: string, loop: boolean }) {

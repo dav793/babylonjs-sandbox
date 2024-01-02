@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs';
 
 import { ISceneLoaderAsyncResult, AnimationGroup } from '@babylonjs/core';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
@@ -14,7 +14,8 @@ export class CharacterModelCollection {
         feet: CharacterBodySlotModels
     };
 
-    animationChanges$ = new BehaviorSubject<{ animation: string, inProgress: boolean }>(null);
+    modelChanges$ = new ReplaySubject<{ modelName: string, operation: CharacterModelOperation }>(50);
+    animationChanges$ = new BehaviorSubject<{ animation: string, looping: boolean, inProgress: boolean }>(null);
     onDestroy$ = new Subject<void>();
 
     constructor(
@@ -41,6 +42,12 @@ export class CharacterModelCollection {
             .map(anim => anim.name);
     }
 
+    get activeAnimation(): string|null {
+        if (!this.animationChanges$.value || !this.animationChanges$.value.inProgress)
+            return null;
+        return this.animationChanges$.value.animation;
+    }
+
     destroy() {
         this.onDestroy$.next();
     }
@@ -55,9 +62,9 @@ export class CharacterModelCollection {
         }
 
         const animationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(anim => anim.name === targetAnimation);
-        this.animationChanges$.next({ animation: animationGroup.name, inProgress: true });
+        this.animationChanges$.next({ animation: animationGroup.name, looping: loop, inProgress: true });
         animationGroup.onAnimationGroupEndObservable.addOnce(() => {
-            this.animationChanges$.next({ animation: animationGroup.name, inProgress: false });
+            this.animationChanges$.next({ animation: animationGroup.name, looping: loop, inProgress: false });
         });
 
     }
@@ -81,6 +88,12 @@ export class CharacterModelCollection {
 export interface CharacterBodySlotModels {
     models: ISceneLoaderAsyncResult | null;
     material: StandardMaterial | null;
+};
+
+export enum CharacterModelOperation {
+    Added = 'added',
+    Removed = 'removed',
+    Updated = 'updated'
 };
 
 export enum CharacterBodySlot {

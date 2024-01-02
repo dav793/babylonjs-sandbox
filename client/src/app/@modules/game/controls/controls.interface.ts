@@ -1,10 +1,10 @@
 
 export interface ControlsOutput {
-    action: 'selectEquippable'|'selectAnimation';
+    action: 'toggleEquippable'|'selectAnimation';
     value?: any; 
 }
 
 export interface ControlsInput {
-    action: 'bodySlotModelTypeNames'|'equipped'|'animationNames'|'nowPlaying';
+    action: 'bodySlotModelTypeNames'|'modelChanges'|'animationNames'|'nowPlaying';
     value?: any;
 }
