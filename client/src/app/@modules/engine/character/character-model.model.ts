@@ -47,10 +47,12 @@ export class CharacterModelCollection {
 
     startAnimation(targetAnimation: string, loop?: boolean): void {
 
-        this.startAnimationByBodySlot(targetAnimation, CharacterBodySlot.Skin, loop);
-        this.startAnimationByBodySlot(targetAnimation, CharacterBodySlot.Legs, loop);
-        this.startAnimationByBodySlot(targetAnimation, CharacterBodySlot.Torso_Under, loop);
-        this.startAnimationByBodySlot(targetAnimation, CharacterBodySlot.Feet, loop);
+        for (let bodyPart of Object.keys(this.bodyParts)) {
+            const models: CharacterBodySlotModels = (this.bodyParts as any)[bodyPart];
+            
+            if (models.models)
+                this.startAnimationByBodySlot(targetAnimation, bodyPart as CharacterBodySlot, loop);
+        }
 
         const animationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(anim => anim.name === targetAnimation);
         this.animationChanges$.next({ animation: animationGroup.name, inProgress: true });
@@ -112,34 +114,34 @@ export class CharacterBodySlotModelType {
         {
             name: 'Male_Skin',
             bodySlot: CharacterBodySlot.Skin,
-            modelPath: 'characters/Male/',
+            modelPath: 'characters/Male',
             modelFilename: 'MaleBody.glb',
-            texturePath: 'characters/Male/',
+            texturePath: 'characters/Male',
             textureFilename: 'UV_MaleBody_Skin_256.jpg',
             alphaMaps: {
                 torso_over: [
                     {
                         applyWith: ['Male_ButtonShirt_Open'],
-                        texturePath: 'characters/Male/AlphaMaps/',
+                        texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_ButtonShirt_Open.png'
                     }
                 ],
                 torso_under: [
                     {
                         applyWith: ['Male_Shirt'],
-                        texturePath: 'characters/Male/AlphaMaps/',
+                        texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_Shirt.png'
                     }
                 ],
                 legs: [
                     {
                         applyWith: ['Male_Pants'],
-                        texturePath: 'characters/Male/AlphaMaps/',
+                        texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_Pants.png'
                     },
                     {
                         applyWith: ['Male_Shorts'],
-                        texturePath: 'characters/Male/AlphaMaps/',
+                        texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_Shorts.png'
                     }
                 ]
@@ -156,7 +158,7 @@ export class CharacterBodySlotModelType {
                 torso_over: [
                     {
                         applyWith: ['Male_ButtonShirt_Open'],
-                        texturePath: 'characters/Male/AlphaMaps/',
+                        texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Shirt_AlphaMap_ButtonShirt_Open.png'
                     }
                 ]
@@ -196,6 +198,15 @@ export class CharacterBodySlotModelType {
             modelFilename: 'MaleBody_Sneakers.glb',
             texturePath: 'characters/Male',
             textureFilename: 'UV_MaleBody_Sneakers_256.jpg',
+            alphaMaps: {}
+        },
+        {
+            name: 'Male_BaseballCap',
+            bodySlot: CharacterBodySlot.Head_Hat,
+            modelPath: 'characters/Male',
+            modelFilename: 'MaleBody_BaseballCap.glb',
+            texturePath: 'characters/Male',
+            textureFilename: 'UV_MaleBody_BaseballCap_256.jpg',
             alphaMaps: {}
         }
     ];

@@ -102,7 +102,15 @@ export class EngineService {
 
     // create character model
     const modelIdentifier = 'MyCharacter';
-    this.characterModelCollection = await this.characterModelFactory.createCharacterModel( modelIdentifier );
+    const equipped = [
+      'Male_Skin',
+      'Male_Shirt',
+      'Male_ButtonShirt_Open',
+      'Male_Shorts',
+      'Male_Sneakers',
+      'Male_BaseballCap'
+    ];
+    this.characterModelCollection = await this.characterModelFactory.createCharacterModel( modelIdentifier, equipped );
     
     this.animationNames$.next( this.characterModelCollection.animationNames );
     this.characterBodySlotModelTypeNames$.next(

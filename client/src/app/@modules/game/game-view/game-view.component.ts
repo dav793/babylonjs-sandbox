@@ -39,29 +39,15 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     // setup engine listeners
     this.engineService.characterBodySlotModelTypeNames$.pipe(
       takeUntil(this._destroy$)
-    ).subscribe(modelTypeNames => {
-
-      this.controlsInput$.next({
-        action: 'bodySlotModelTypeNames',
-        value: modelTypeNames
-      });
-
-    });
+    ).subscribe( modelTypeNames => this.controlsInput$.next({ action: 'bodySlotModelTypeNames', value: modelTypeNames }) );
 
     this.engineService.animationNames$.pipe(
       takeUntil(this._destroy$)
-    ).subscribe(animationNames => {
-
-      this.controlsInput$.next({
-        action: 'animationNames',
-        value: animationNames
-      });
-
-    });
+    ).subscribe( animationNames => this.controlsInput$.next({ action: 'animationNames', value: animationNames }) );
 
     this.engineService.animationStatus$.pipe(
       takeUntil(this._destroy$)
-    ).subscribe(value => this.controlsInput$.next({ action: 'nowPlaying', value }));
+    ).subscribe( value => this.controlsInput$.next({ action: 'nowPlaying', value }) );
   }
 
   startRenderLoop(): void {
@@ -86,6 +72,9 @@ export class GameViewComponent implements AfterViewInit, OnDestroy {
     switch(event.action) {
       case 'selectAnimation':
         this.engineService.startAnimation(event.value);
+        break;
+      case 'selectEquippable':
+        // @todo: implement 'toggleEquippable'
         break;
     }
 

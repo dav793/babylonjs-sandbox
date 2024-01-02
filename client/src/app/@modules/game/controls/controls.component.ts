@@ -51,11 +51,15 @@ export class ControlsComponent implements OnDestroy, OnChanges {
       case 'bodySlotModelTypeNames':
         this.createBodySlotModelTypeOptions(input.value);
         break;
+      case 'equipped':
+        this.updateEquipped(input.value);
+        break;
       case 'animationNames':
         this.createAnimationOptions(input.value);
         break;
       case 'nowPlaying':
         this.updateNowPlaying(input.value);
+        break;
     }
 
   }
@@ -81,6 +85,10 @@ export class ControlsComponent implements OnDestroy, OnChanges {
     }));
   }
 
+  updateEquipped(value: { name: string, isEquipped: boolean }) {
+    console.log(value);
+  }
+
   updateNowPlaying(value: { animation: string, inProgress: boolean }) {
     if (!value || !value.animation)
       return;
@@ -93,6 +101,10 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   }
 
   // OUTPUTS
+
+  selectEquippable(name: string) {
+    console.log(name);
+  }
 
   selectAnimation(name: string) {
     const animation = this.model.animations.find(elem => elem.name === name);

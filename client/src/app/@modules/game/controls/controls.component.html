@@ -5,7 +5,9 @@
     
     <div>
         <ng-container *ngFor="let equipmentType of model.bodySlotModelTypes">
-            <p class="select-item">{{equipmentType.name}}</p>
+            <p class="select-item"
+                (click)="selectEquippable(equipmentType.name)" 
+            >{{equipmentType.name}}</p>
         </ng-container>
     </div>
 
@@ -19,9 +21,8 @@
         <ng-container *ngFor="let animation of model.animations">
             <p class="select-item" 
                 (click)="selectAnimation(animation.name)" 
-                [ngClass]="{'selected': isAnimationSelected(animation.name)}">
-                {{animation.name}}
-            </p>
+                [ngClass]="{'selected': isAnimationSelected(animation.name)}"
+            >{{animation.name}}</p>
         </ng-container>
     </div>
 
