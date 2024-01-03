@@ -149,10 +149,16 @@ export class EngineService {
     const modelTypeDef: CharacterBodySlotModelTypeDefinition = CharacterBodySlotModelType.findByName(modelName);
     const bodySlotModels: CharacterBodySlotModels = this.characterModelCollection.bodyParts[modelTypeDef.bodySlot];
     
-    if (bodySlotModels.models)
-      this.characterModelFactory.destroyCollectionModel(modelTypeDef, this.characterModelCollection);
-    else
+    if (bodySlotModels.models && bodySlotModels.modelName !== modelName) {
+      // slot has a different model; destroy old model and create new one
+      const prevModelTypeDef: CharacterBodySlotModelTypeDefinition = CharacterBodySlotModelType.findByName(bodySlotModels.modelName);
+      this.characterModelFactory.destroyCollectionModel(prevModelTypeDef, this.characterModelCollection);
       await this.characterModelFactory.createCollectionModel(modelTypeDef, this.characterModelCollection);
+    }
+    else if (bodySlotModels.models && bodySlotModels.modelName === modelName) 
+      this.characterModelFactory.destroyCollectionModel(modelTypeDef, this.characterModelCollection); // slot has same model; destroy model
+    else  
+      await this.characterModelFactory.createCollectionModel(modelTypeDef, this.characterModelCollection);  // slot is empty; create model
     
     this.characterModelFactory.updateTextures(this.characterModelCollection);
 
