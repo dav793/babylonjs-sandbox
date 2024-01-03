@@ -5,7 +5,7 @@ import { Subject, BehaviorSubject, interval, map, takeUntil, takeWhile } from 'r
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Color3, AnimationGroup, Animatable, ISceneLoaderAsyncResult } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Color3, Animation, AnimationGroup, Animatable, ISceneLoaderAsyncResult } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -51,6 +51,8 @@ export class EngineService {
     this._canvas = canvas;
     this.engine = new Engine(canvas.nativeElement, true);
     this.scene = this.createDefaultScene(this.engine);
+    // Animation.AllowMatrixDecomposeForInterpolation = false;
+    // Animation.AllowMatricesInterpolation = false;
 
     this.runDefaultScene();
 
