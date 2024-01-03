@@ -140,8 +140,12 @@ export class EngineService {
     );
   }
 
-  startAnimation(value: { name: string, loop: boolean }) {
-    this.characterModelCollection.startAnimation(value.name, value.loop);
+  startAnimation(value: { 
+    name: string, 
+    loop: boolean, 
+    blend: boolean 
+  }) {
+    this.characterModelCollection.startAnimation(value.name, value.loop, value.blend);
   }
 
   async toggleEquippable(modelName: string) {

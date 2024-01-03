@@ -18,8 +18,16 @@
 }
 
 .checkbox {
-    padding: 10px 0;
+    padding: 5px 0;
     text-align: left;
+}
+
+.checkbox:first-of-type {
+    padding-top: 10px;
+}
+
+.checkbox:last-of-type {
+    padding-bottom: 10px;
 }
 
 .select-item {

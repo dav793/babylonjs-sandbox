@@ -27,8 +27,15 @@
         </ng-container>
     </div>
 
-    <div class="checkbox">
-        <input #checkboxLoop [(ngModel)]="model.loop" type="checkbox" id="loop" name="loop"/>
-        <label for="loop">Loop animation</label>
+    <div>
+        <div class="checkbox">
+            <input #checkboxLoop [(ngModel)]="model.loop" type="checkbox" id="loop" name="loop"/>
+            <label for="loop">Loop animation</label>
+        </div>
+    
+        <div class="checkbox">
+            <input #checkboxLoop [(ngModel)]="model.blend" type="checkbox" id="blend" name="blend"/>
+            <label for="blend">Blend animations</label>
+        </div>
     </div>
 </div>

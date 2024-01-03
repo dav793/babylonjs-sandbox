@@ -15,10 +15,12 @@ export class ControlsComponent implements OnDestroy, OnChanges {
 
   model: {
     loop: boolean,
+    blend: boolean,
     animations: { name: string, selected: boolean }[],
     bodySlotModelTypes: { name: string, selected: boolean }[]
   } = {
     loop: true,
+    blend: false,
     animations: [],
     bodySlotModelTypes: []
   };
@@ -119,7 +121,8 @@ export class ControlsComponent implements OnDestroy, OnChanges {
     const animation = this.model.animations.find(elem => elem.name === name);
     const value = {
       name: animation.name,
-      loop: this.model.loop
+      loop: this.model.loop,
+      blend: this.model.blend
     };
 
     this.output.emit({ action: 'selectAnimation', value });

@@ -1,4 +1,4 @@
-import { BehaviorSubject, ReplaySubject, Subject } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject, interval, takeWhile, map } from 'rxjs';
 
 import { ISceneLoaderAsyncResult, AnimationGroup } from '@babylonjs/core';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
@@ -62,15 +62,24 @@ export class CharacterModelCollection {
         this.onDestroy$.next();
     }
 
-    startAnimation(targetAnimation: string, loop?: boolean): void {
+    startAnimation(targetAnimation: string, loop?: boolean, blend?: boolean): void {
 
+        // get previous animation if exists and emit stop status message
+        let previousAnimation = this.activeAnimation;
+        if (previousAnimation) {
+            const previousAnimationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(anim => anim.name === previousAnimation);
+            this.animationChanges$.next({ animation: previousAnimationGroup.name, looping: null, inProgress: false });
+        }
+        
+        // start animations for each body slot
         for (let bodyPart of Object.keys(this.bodyParts)) {
             const models: CharacterBodySlotModels = (this.bodyParts as any)[bodyPart];
             
             if (models.models)
-                this.startAnimationByBodySlot(targetAnimation, bodyPart as CharacterBodySlot, loop);
+                this.startAnimationByBodySlot(targetAnimation, previousAnimation, bodyPart as CharacterBodySlot, loop, blend);
         }
 
+        // emit status messages
         const animationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(anim => anim.name === targetAnimation);
         this.animationChanges$.next({ animation: animationGroup.name, looping: loop, inProgress: true });
         animationGroup.onAnimationGroupEndObservable.addOnce(() => {
@@ -79,18 +88,62 @@ export class CharacterModelCollection {
 
     }
 
-    private startAnimationByBodySlot(targetAnimation: string, bodySlot: CharacterBodySlot, loop?: boolean): void {
+    private startAnimationByBodySlot(targetAnimation: string, previousAnimation: string, bodySlot: CharacterBodySlot, loop?: boolean, blend?: boolean): void {
         let animationGroup: AnimationGroup;
-        this.bodyParts[ bodySlot ].models.animationGroups.forEach(anim => {
-            anim.stop();
+        let previousAnimationGroup: AnimationGroup;
+        let baseAnimationGroup: AnimationGroup;
 
-            if (anim.name === targetAnimation)
+        this.bodyParts[ bodySlot ].models.animationGroups.forEach(anim => {
+            if (anim.name !== previousAnimation)
+                anim.stop();
+            else if (anim.name === previousAnimation)
+                previousAnimationGroup = anim;
+
+            if (anim.name === targetAnimation) {
                 animationGroup = anim;
+
+                if (bodySlot !== CharacterBodySlot.Skin)
+                    baseAnimationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(baseAnim => baseAnim.name === targetAnimation);
+            }
         });
         if (!animationGroup)
             throw new Error(`Animation '${targetAnimation}' not found.`);
 
-        animationGroup.play(loop);
+        if (!blend) {
+            if (previousAnimationGroup)
+                previousAnimationGroup.stop();
+            animationGroup.play(loop);
+        }
+        else {
+            // blend smoothly between previous and next animations
+            let fromWeight = 1.0;
+            let toWeight = 0.0;
+            animationGroup.play(loop);
+            animationGroup.setWeightForAllAnimatables(0);
+
+            interval(3).pipe(
+                map(() => fromWeight),
+                takeWhile(fw => fw > 0.0)
+            ).subscribe(() => {
+                if (!previousAnimationGroup) {
+                    fromWeight = 0.0;
+                    animationGroup.setWeightForAllAnimatables(1.0);
+                    return;
+                }
+
+                fromWeight = fromWeight > 0.0 ? fromWeight - 0.01 : 0;
+                toWeight = toWeight < 1.0 ? toWeight + 0.01 : 1;
+
+                previousAnimationGroup.setWeightForAllAnimatables(fromWeight);
+                animationGroup.setWeightForAllAnimatables(toWeight);
+                if (baseAnimationGroup)
+                    animationGroup.syncAllAnimationsWith(baseAnimationGroup.animatables[0]);
+
+                if (fromWeight === 0.0)
+                    previousAnimationGroup.stop();
+            });
+        }
+        
     }
 
 }
