@@ -23,18 +23,28 @@ export class CharacterModelCollection {
     ) {
 
         this.bodyParts = {
-            skin:           { models: null, material: null },
-            head_hat:       { models: null, material: null },
-            torso_under:    { models: null, material: null },
-            torso_over:     { models: null, material: null },
-            legs:           { models: null, material: null },
-            feet:           { models: null, material: null },
+            skin:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
+            head_hat:       CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
+            torso_under:    CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
+            torso_over:     CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
+            legs:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
+            feet:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
         };
 
     }
 
+    static CreateEmptyCharacterBodySlotModels(): CharacterBodySlotModels {
+        return { modelName: null, models: null, material: null };
+    }
+
     get identifier(): string {
         return this._id;
+    }
+
+    get modelNames(): string[] {
+        return Object.keys(this.bodyParts)
+            .map(bodyPart => (this.bodyParts as any)[ bodyPart ].modelName)
+            .filter(modelName => modelName);
     }
 
     get animationNames(): string[] {
@@ -86,6 +96,7 @@ export class CharacterModelCollection {
 }
 
 export interface CharacterBodySlotModels {
+    modelName: string | null,
     models: ISceneLoaderAsyncResult | null;
     material: StandardMaterial | null;
 };

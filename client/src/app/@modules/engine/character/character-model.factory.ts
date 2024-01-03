@@ -29,30 +29,17 @@ export class CharacterModelFactory {
 
       await this.createCollectionModel(modelTypeDef, modelCollection);
     }
+    await this.updateTextures(modelCollection);
 
     return modelCollection;
-  }
-
-  destroyCollectionModel(modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): void {
-
-    const collection = parent.bodyParts[ modelTypeDef.bodySlot ];
-    
-    for (let mesh of collection.models.meshes) {
-      this.scene.removeMesh(mesh);
-    }
-    this.scene.removeMaterial(collection.material);
-    
-    delete parent.bodyParts[ modelTypeDef.bodySlot ];
-    parent.bodyParts[ modelTypeDef.bodySlot ] = { models: null, material: null };
-
-    parent.modelChanges$.next({ modelName: modelTypeDef.name, operation: CharacterModelOperation.Removed });
-
   }
 
   async createCollectionModel(modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): Promise<void> {
 
     const modelIdentifier = `${parent.identifier}.${modelTypeDef.bodySlot}`;
     const collection = parent.bodyParts[ modelTypeDef.bodySlot ];
+
+    collection.modelName = modelTypeDef.name;
     
     collection.models = await SceneLoader.ImportMeshAsync('', `/assets/art/models/${modelTypeDef.modelPath}/`, modelTypeDef.modelFilename, this.scene);
     collection.models.meshes[0].name = modelIdentifier;
@@ -60,39 +47,7 @@ export class CharacterModelFactory {
     collection.models.animationGroups[0].stop();        // stop default animation
 
     collection.material = new StandardMaterial(modelIdentifier, this.scene);
-    
-    if (Object.keys(modelTypeDef.alphaMaps).length > 0) {
-      
-      const diffuseTexture: Texture = await EngineUtil.LoadTextureAsync(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene);
-      const textureSize = diffuseTexture.getSize();
-
-      const bodyPart = Object.keys(modelTypeDef.alphaMaps)[0];
-      const entry = modelTypeDef.alphaMaps[bodyPart][0];
-      const alphaMap: Texture = await EngineUtil.LoadTextureAsync(`/assets/art/textures/${entry.texturePath}/${entry.textureFilename}`, this.scene);
-
-      const diffuseView = await diffuseTexture.readPixels();
-      const diffuseData = new Uint8Array(diffuseView.buffer);
-
-      const alphaMapView = await alphaMap.readPixels();
-      const alphaMapData = new Uint8Array(alphaMapView.buffer);
-
-      for (let i = 3; i < diffuseData.length; i += 4) {
-        if (alphaMapData[i] < 255)
-          diffuseData[i] = alphaMapData[i];
-      }
-      // see example: https://playground.babylonjs.com/#5IWPL7
-
-      // const composedTexture = RawTexture.CreateRGBATexture(diffuseData, textureSize.width, textureSize.height, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-      const composedTexture = new RawTexture(diffuseData, textureSize.width, textureSize.height, Constants.TEXTUREFORMAT_RGBA, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
-      composedTexture.hasAlpha = true;
-
-      collection.material.transparencyMode = Material.MATERIAL_ALPHATEST;
-      collection.material.useAlphaFromDiffuseTexture = true;
-      collection.material.diffuseTexture = composedTexture;
-    }
-    else
-      collection.material.diffuseTexture = new Texture(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene, true, false);
-
+    collection.material.diffuseTexture = await EngineUtil.LoadTextureAsync(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene);
     collection.material.specularColor = new Color3(0.02, 0.02, 0.02);
     collection.models.meshes[1].material = collection.material;
 
@@ -111,6 +66,81 @@ export class CharacterModelFactory {
       // targetAnimation.goToFrame(currentFrame);
     }
   
+  }
+
+  destroyCollectionModel(modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): void {
+
+    const collection = parent.bodyParts[ modelTypeDef.bodySlot ];
+    
+    for (let mesh of collection.models.meshes) {
+      this.scene.removeMesh(mesh);
+    }
+    this.scene.removeMaterial(collection.material);
+    
+    delete parent.bodyParts[ modelTypeDef.bodySlot ];
+    parent.bodyParts[ modelTypeDef.bodySlot ] = CharacterModelCollection.CreateEmptyCharacterBodySlotModels();
+
+    parent.modelChanges$.next({ modelName: modelTypeDef.name, operation: CharacterModelOperation.Removed });
+
+  }
+
+  async updateTextures(modelCollection: CharacterModelCollection): Promise<void> {
+    
+    for (let modelName of modelCollection.modelNames) {
+      const modelTypeDef = CharacterBodySlotModelType.findByName(modelName);
+
+      const texturePath = `/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`;
+      const texture = await EngineUtil.LoadTextureAsync(texturePath, this.scene);
+      const textureSize = texture.getSize();
+      const textureData = new Uint8Array( (await texture.readPixels()).buffer );
+
+      await this.updateTextureData(textureData, modelTypeDef, modelCollection);
+      const composedTexture = new RawTexture(textureData, textureSize.width, textureSize.height, Constants.TEXTUREFORMAT_RGBA, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+      composedTexture.hasAlpha = true;
+
+      const collection = modelCollection.bodyParts[ modelTypeDef.bodySlot ];
+      collection.material.transparencyMode = Material.MATERIAL_ALPHATEST;
+      collection.material.useAlphaFromDiffuseTexture = true;
+      collection.material.diffuseTexture = composedTexture;
+    }
+
+  }
+
+  private async updateTextureData(textureData: Uint8Array, modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): Promise<void> {
+
+    const alphaMaps = parent.modelNames
+      .map(comparingModelName => {
+        if (comparingModelName === modelTypeDef.name)
+          return [];
+
+        const comparingDef = CharacterBodySlotModelType.findByName(comparingModelName);
+        if ( !(comparingDef.bodySlot in modelTypeDef.alphaMaps) )
+          return [];
+        
+        return modelTypeDef.alphaMaps[ comparingDef.bodySlot ]
+          .filter(alphaMap => alphaMap.applyWith.includes(comparingModelName))
+      })
+      .flat();
+
+    if (alphaMaps.length === 0)
+      return;
+
+    for (let alphaMap of alphaMaps) {
+      const alphaMapTexPath = `/assets/art/textures/${alphaMap.texturePath}/${alphaMap.textureFilename}`;
+      const alphaMapTex = await EngineUtil.LoadTextureAsync(alphaMapTexPath, this.scene);
+      const alphaMapData = new Uint8Array( (await alphaMapTex.readPixels()).buffer );
+
+      this.composePixelDataWithAlphaMap(textureData, alphaMapData);
+    }
+
+  }
+
+  private composePixelDataWithAlphaMap(sourcePixels: Uint8Array, alphaMapPixels: Uint8Array): void {
+    for (let i = 3; i < sourcePixels.length; i += 4) {
+      if (alphaMapPixels[i] < 255)
+        sourcePixels[i] = alphaMapPixels[i];
+    }
+    // see example: https://playground.babylonjs.com/#5IWPL7
   }
 
 }
