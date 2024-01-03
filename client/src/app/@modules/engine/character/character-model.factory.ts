@@ -1,7 +1,9 @@
-import { SceneLoader, Color3 } from '@babylonjs/core';
+import { Engine, Material, SceneLoader, Color3, RawTexture, Constants } from '@babylonjs/core';
 import { Scene } from '@babylonjs/core/scene';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
+
+import { EngineUtil } from 'src/app/@shared/helpers/engine.util';
 
 import { 
   CharacterModelCollection, 
@@ -58,7 +60,39 @@ export class CharacterModelFactory {
     collection.models.animationGroups[0].stop();        // stop default animation
 
     collection.material = new StandardMaterial(modelIdentifier, this.scene);
-    collection.material.diffuseTexture = new Texture(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene, true, false);
+    
+    if (Object.keys(modelTypeDef.alphaMaps).length > 0) {
+      
+      const diffuseTexture: Texture = await EngineUtil.LoadTextureAsync(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene);
+      const textureSize = diffuseTexture.getSize();
+
+      const bodyPart = Object.keys(modelTypeDef.alphaMaps)[0];
+      const entry = modelTypeDef.alphaMaps[bodyPart][0];
+      const alphaMap: Texture = await EngineUtil.LoadTextureAsync(`/assets/art/textures/${entry.texturePath}/${entry.textureFilename}`, this.scene);
+
+      const diffuseView = await diffuseTexture.readPixels();
+      const diffuseData = new Uint8Array(diffuseView.buffer);
+
+      const alphaMapView = await alphaMap.readPixels();
+      const alphaMapData = new Uint8Array(alphaMapView.buffer);
+
+      for (let i = 3; i < diffuseData.length; i += 4) {
+        if (alphaMapData[i] < 255)
+          diffuseData[i] = alphaMapData[i];
+      }
+      // see example: https://playground.babylonjs.com/#5IWPL7
+
+      // const composedTexture = RawTexture.CreateRGBATexture(diffuseData, textureSize.width, textureSize.height, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+      const composedTexture = new RawTexture(diffuseData, textureSize.width, textureSize.height, Constants.TEXTUREFORMAT_RGBA, this.scene, false, false, Texture.NEAREST_SAMPLINGMODE);
+      composedTexture.hasAlpha = true;
+
+      collection.material.transparencyMode = Material.MATERIAL_ALPHATEST;
+      collection.material.useAlphaFromDiffuseTexture = true;
+      collection.material.diffuseTexture = composedTexture;
+    }
+    else
+      collection.material.diffuseTexture = new Texture(`/assets/art/textures/${modelTypeDef.texturePath}/${modelTypeDef.textureFilename}`, this.scene, true, false);
+
     collection.material.specularColor = new Color3(0.02, 0.02, 0.02);
     collection.models.meshes[1].material = collection.material;
 
