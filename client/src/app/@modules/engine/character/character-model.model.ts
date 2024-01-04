@@ -1,6 +1,6 @@
 import { BehaviorSubject, ReplaySubject, Subject, interval, takeWhile, map } from 'rxjs';
 
-import { ISceneLoaderAsyncResult, AnimationGroup } from '@babylonjs/core';
+import { Scene, ISceneLoaderAsyncResult, AnimationGroup, AsyncCoroutine } from '@babylonjs/core';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 
 export class CharacterModelCollection {
@@ -21,7 +21,6 @@ export class CharacterModelCollection {
     constructor(
         private _id: string
     ) {
-
         this.bodyParts = {
             skin:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
             head_hat:       CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
@@ -30,7 +29,6 @@ export class CharacterModelCollection {
             legs:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
             feet:           CharacterModelCollection.CreateEmptyCharacterBodySlotModels(),
         };
-
     }
 
     static CreateEmptyCharacterBodySlotModels(): CharacterBodySlotModels {
@@ -62,7 +60,7 @@ export class CharacterModelCollection {
         this.onDestroy$.next();
     }
 
-    startAnimation(targetAnimation: string, loop?: boolean, blend?: boolean): void {
+    startAnimation(scene: Scene, targetAnimation: string, loop?: boolean, blend?: boolean): void {
 
         // get previous animation if exists and emit stop status message
         let previousAnimation = this.activeAnimation;
@@ -76,7 +74,7 @@ export class CharacterModelCollection {
             const models: CharacterBodySlotModels = (this.bodyParts as any)[bodyPart];
             
             if (models.models)
-                this.startAnimationByBodySlot(targetAnimation, previousAnimation, bodyPart as CharacterBodySlot, loop, blend);
+                this.startAnimationByBodySlot(scene, targetAnimation, previousAnimation, bodyPart as CharacterBodySlot, loop, blend);
         }
 
         // emit status messages
@@ -85,13 +83,14 @@ export class CharacterModelCollection {
         animationGroup.onAnimationGroupEndObservable.addOnce(() => {
             this.animationChanges$.next({ animation: animationGroup.name, looping: loop, inProgress: false });
         });
-
     }
 
-    private startAnimationByBodySlot(targetAnimation: string, previousAnimation: string, bodySlot: CharacterBodySlot, loop?: boolean, blend?: boolean): void {
+    private startAnimationByBodySlot(scene: Scene, targetAnimation: string, previousAnimation: string, bodySlot: CharacterBodySlot, loop?: boolean, blend?: boolean): void {
         let animationGroup: AnimationGroup;
         let previousAnimationGroup: AnimationGroup;
-        let baseAnimationGroup: AnimationGroup;
+
+        if (targetAnimation === previousAnimation)
+            return;
 
         this.bodyParts[ bodySlot ].models.animationGroups.forEach(anim => {
             if (anim.name !== previousAnimation)
@@ -101,51 +100,45 @@ export class CharacterModelCollection {
 
             if (anim.name === targetAnimation) {
                 animationGroup = anim;
-
-                if (bodySlot !== CharacterBodySlot.Skin)
-                    baseAnimationGroup = this.bodyParts[ CharacterBodySlot.Skin ].models.animationGroups.find(baseAnim => baseAnim.name === targetAnimation);
             }
         });
         if (!animationGroup)
             throw new Error(`Animation '${targetAnimation}' not found.`);
 
-        // see animation blending example: https://playground.babylonjs.com/#WZ4485#2
+        if (!previousAnimationGroup) {
+            animationGroup.play(loop);
+            return;
+        }
 
         if (!blend) {
-            if (previousAnimationGroup)
-                previousAnimationGroup.stop();
+            previousAnimationGroup.stop();
             animationGroup.play(loop);
         }
         else {
             // blend smoothly between previous and next animations
-            let fromWeight = 1.0;
-            let toWeight = 0.0;
-            animationGroup.play(loop);
-            animationGroup.setWeightForAllAnimatables(0);
-
-            interval(3).pipe(
-                map(() => fromWeight),
-                takeWhile(fw => fw > 0.0)
-            ).subscribe(() => {
-                if (!previousAnimationGroup) {
-                    fromWeight = 0.0;
-                    animationGroup.setWeightForAllAnimatables(1.0);
-                    return;
-                }
-
-                fromWeight = fromWeight > 0.0 ? fromWeight - 0.01 : 0;
-                toWeight = toWeight < 1.0 ? toWeight + 0.01 : 1;
-
-                previousAnimationGroup.setWeightForAllAnimatables(fromWeight);
-                animationGroup.setWeightForAllAnimatables(toWeight);
-                if (baseAnimationGroup)
-                    animationGroup.syncAllAnimationsWith(baseAnimationGroup.animatables[0]);
-
-                if (fromWeight === 0.0)
-                    previousAnimationGroup.stop();
-            });
+            // see animation blending example: https://playground.babylonjs.com/#WZ4485#2
+            scene.onBeforeRenderObservable.runCoroutineAsync(
+                this.blendAnimations(previousAnimationGroup, animationGroup, loop)
+            );
         }
-        
+    }
+
+    private *blendAnimations(fromAnimation: AnimationGroup, toAnimation: AnimationGroup, loop: boolean): AsyncCoroutine<void> {
+        let fromWeight = 1;
+        let toWeight = 0;
+
+        toAnimation.play(loop);
+
+        // blend from fromAnimation to toAnimation by updating weights every frame
+        while(toWeight < 1) {
+            toWeight += 0.02;
+            fromWeight -= 0.02;
+
+            toAnimation.setWeightForAllAnimatables(toWeight);
+            fromAnimation.setWeightForAllAnimatables(fromWeight);
+
+            yield;
+        }
     }
 
 }

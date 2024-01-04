@@ -147,7 +147,7 @@ export class EngineService {
     loop: boolean, 
     blend: boolean 
   }) {
-    this.characterModelCollection.startAnimation(value.name, value.loop, value.blend);
+    this.characterModelCollection.startAnimation(this.scene, value.name, value.loop, value.blend);
   }
 
   async toggleEquippable(modelName: string) {
@@ -167,60 +167,6 @@ export class EngineService {
       await this.characterModelFactory.createCollectionModel(modelTypeDef, this.characterModelCollection);  // slot is empty; create model
     
     this.characterModelFactory.updateTextures(this.characterModelCollection);
-
   }
-
-  // startAnimation(value: { uniqueId: number, name: string, loop: boolean }) {
-
-  //   let animationGroup: AnimationGroup;
-  //   this.characterModel.animationGroups.forEach(elem => {
-  //     if (elem !== this.animationGroup)
-  //       elem.stop();    // stop all animations (other than current and last)
-
-  //     if (elem.uniqueId === value.uniqueId)
-  //       animationGroup = elem;    // find current animation
-  //   });
-
-  //   if (!animationGroup) {
-  //     console.error(`Animation '${value.name}' not found.`);
-  //     return;
-  //   }
-
-  //   // blend smoothly between last and current animations 
-  //   const fromAnimation = this.animationGroup;
-  //   const toAnimation = animationGroup;
-  //   let fromWeight = 1.0;
-  //   let toWeight = 0.0;
-  //   animationGroup.play(value.loop);
-  //   animationGroup.setWeightForAllAnimatables(0);
-
-  //   interval(10).pipe(
-  //     map(() => fromWeight),
-  //     takeWhile(fw => fw > 0.0)
-  //   ).subscribe(() => {
-  //     if (!fromAnimation) {
-  //       fromWeight = 0.0;
-  //       toAnimation.setWeightForAllAnimatables(1);
-  //       return;
-  //     }
-
-  //     fromWeight = fromWeight > 0.0 ? fromWeight - 0.03 : 0;
-  //     toWeight = toWeight < 1.0 ? toWeight + 0.03 : 1;
-
-  //     fromAnimation.setWeightForAllAnimatables(fromWeight);
-  //     toAnimation.setWeightForAllAnimatables(toWeight);
-
-  //     if (fromWeight === 0.0)
-  //       fromAnimation.stop();
-  //   })
-    
-  //   this.animationGroup = animationGroup;
-  //   this.controlLabels$.next({ animation: value.name, inProgress: true });
-
-  //   this.animationGroup.onAnimationGroupEndObservable.addOnce(() => {
-  //     this.controlLabels$.next({ animation: value.name, inProgress: false });
-  //   });
-    
-  // }
 
 }

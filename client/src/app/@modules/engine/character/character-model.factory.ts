@@ -65,7 +65,6 @@ export class CharacterModelFactory {
       // const currentFrame = baseAnimation.animatables[0].masterFrame;
       // targetAnimation.goToFrame(currentFrame);
     }
-  
   }
 
   destroyCollectionModel(modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): void {
@@ -81,7 +80,6 @@ export class CharacterModelFactory {
     parent.bodyParts[ modelTypeDef.bodySlot ] = CharacterModelCollection.CreateEmptyCharacterBodySlotModels();
 
     parent.modelChanges$.next({ modelName: modelTypeDef.name, operation: CharacterModelOperation.Removed });
-
   }
 
   async updateTextures(modelCollection: CharacterModelCollection): Promise<void> {
@@ -103,7 +101,6 @@ export class CharacterModelFactory {
       collection.material.useAlphaFromDiffuseTexture = true;
       collection.material.diffuseTexture = composedTexture;
     }
-
   }
 
   private async updateTextureData(textureData: Uint8Array, modelTypeDef: CharacterBodySlotModelTypeDefinition, parent: CharacterModelCollection): Promise<void> {
@@ -132,15 +129,15 @@ export class CharacterModelFactory {
 
       this.composePixelDataWithAlphaMap(textureData, alphaMapData);
     }
-
   }
 
   private composePixelDataWithAlphaMap(sourcePixels: Uint8Array, alphaMapPixels: Uint8Array): void {
+    // see example: https://playground.babylonjs.com/#5IWPL7
+    
     for (let i = 3; i < sourcePixels.length; i += 4) {
       if (alphaMapPixels[i] < 255)
         sourcePixels[i] = alphaMapPixels[i];
     }
-    // see example: https://playground.babylonjs.com/#5IWPL7
   }
 
 }

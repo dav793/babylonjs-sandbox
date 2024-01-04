@@ -20,7 +20,7 @@ export class ControlsComponent implements OnDestroy, OnChanges {
     bodySlotModelTypes: { name: string, selected: boolean }[]
   } = {
     loop: true,
-    blend: false,
+    blend: true,
     animations: [],
     bodySlotModelTypes: []
   };
