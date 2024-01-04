@@ -79,22 +79,29 @@ export class ControlsComponent implements OnDestroy, OnChanges {
   // INPUTS
 
   createBodySlotModelTypeOptions(values: string[]) {
-    this.model.bodySlotModelTypes = values.map(elem => ({
-      name: elem,
-      selected: false
-    }));
+    this.model.bodySlotModelTypes = values
+      .map(elem => ({
+        name: elem,
+        selected: false
+      }))
+      .filter(elem => elem.name !== 'Male_Skin');
   }
 
   createAnimationOptions(values: string[]) {
-    this.model.animations = values.map(elem => ({ 
-      name: elem, 
-      selected: false 
-    }));
+    this.model.animations = values
+      .map(elem => ({ 
+        name: elem, 
+        selected: false 
+      }))
+      .filter(elem => elem.name !== 'Wave');
   }
 
   updateModelChanges(value: { name: string, isEquipped: boolean }) {
     setTimeout(() => {  // wrap in timeout to avoid 'ExpressionChangedAfterItWasChecked' error
       const modelType = this.model.bodySlotModelTypes.find(elem => elem.name === value.name);
+      if (!modelType)
+        return;
+      
       modelType.selected = value.isEquipped;
       this.cdr.detectChanges();
     });
