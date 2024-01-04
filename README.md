@@ -34,7 +34,7 @@
 
     Mac OS / Linux:
     ```bash
-    chmod u+x *.sh
+    chmod u+x ./client/*.sh
     ```
 
 5. **Create docker volume if not exists**
@@ -104,3 +104,77 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
     ```
 
     What it does: Changes instance of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
+
+## Install Docker on Ubuntu
+
+See [https://docs.docker.com/desktop/install/ubuntu/](https://docs.docker.com/desktop/install/ubuntu/) for reference.
+
+1. Add Docker's official GPG key:
+    ```bash
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl gnupg
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    ```
+
+2. Add the repository to Apt sources:
+    ```bash
+    echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update
+    ```
+
+3. Download DEB package
+    ```bash
+    curl -O https://desktop.docker.com/linux/main/amd64/docker-desktop-4.26.1-amd64.deb
+    ```
+
+4. Install the package
+    ```bash
+    sudo apt-get update
+    sudo apt-get install ./docker-desktop-4.26.1-amd64.deb
+    ```
+
+5. Remove the package
+    ```bash
+    rm ./docker-desktop-4.26.1-amd64.deb
+    ```
+
+6. Run Docker Desktop
+    ```bash
+    systemctl --user start docker-desktop
+    ```
+
+## Install dependencies manually
+
+1. Install NVM:
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+    ```
+
+1. Install Nodejs version 18:
+    ```bash
+    nvm install 18
+    ```
+
+3. Start using Nodejs version 18:
+    ```bash
+    nvm use 18
+    ```
+
+4. Install global npm packages:
+    ```bash
+    npm install -g goldilogs
+    npm install -g @angular/cli@^16.2.5
+    npm install -g typescript@~5.1.3
+    ```
+
+5. Install project dependencies:
+    ```bash
+    cd client
+    npm install
+    ```
+
