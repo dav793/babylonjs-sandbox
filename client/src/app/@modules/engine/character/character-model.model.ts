@@ -109,6 +109,8 @@ export class CharacterModelCollection {
         if (!animationGroup)
             throw new Error(`Animation '${targetAnimation}' not found.`);
 
+        // see animation blending example: https://playground.babylonjs.com/#WZ4485#2
+
         if (!blend) {
             if (previousAnimationGroup)
                 previousAnimationGroup.stop();
