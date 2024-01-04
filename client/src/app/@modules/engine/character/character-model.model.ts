@@ -225,7 +225,7 @@ export class CharacterBodySlotModelType {
             modelPath: 'characters/Male',
             modelFilename: 'MaleBody_Shirt.glb',
             texturePath: 'characters/Male',
-            textureFilename: 'UV_MaleBody_Shirt_256.jpg',
+            textureFilename: 'UV_MaleBody_Shirt_White_256.jpg',
             alphaMaps: {
                 torso_over: [
                     {
