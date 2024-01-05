@@ -1,4 +1,4 @@
-import { Texture, Scene } from '@babylonjs/core';
+import { Texture, Scene, GroundMesh, MeshBuilder } from '@babylonjs/core';
 
 export class EngineUtil {
 
@@ -17,6 +17,19 @@ export class EngineUtil {
                 () => resolve(tex),
                 () => reject()
             );
+        });
+    }
+
+    static CreateGroundMeshFromHeightmap(name: string, heightmapPath: string, scene: Scene): Promise<GroundMesh> {
+        return new Promise(resolve => {
+            const ground = MeshBuilder.CreateGroundFromHeightMap(name, heightmapPath, {
+                width: 10,
+                height: 10,
+                minHeight: 0,
+                maxHeight: 0.5,
+                subdivisions: 200,
+                onReady: () => resolve(ground)
+            }, scene);
         });
     }
 
