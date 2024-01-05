@@ -10,7 +10,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { HemisphericLight } from '@babylonjs/core';
-import { Vector3 } from '@babylonjs/core';
+import { Vector3, Texture, MultiMaterial, SubMesh } from '@babylonjs/core';
 import { Inspector } from '@babylonjs/inspector';
 
 @Injectable()
@@ -76,19 +76,38 @@ export class EngineService {
     camera.wheelPrecision = 100;
     camera.attachControl(this._canvas.nativeElement, true);
 
-    // @todo: write example
+    // see tiled ground example: https://doc.babylonjs.com/features/featuresDeepDive/mesh/creation/set/tiled_ground
+    // https://playground.babylonjs.com/#8VDULN#1
 
-    // create ground plane from heightmap
-    const ground = MeshBuilder.CreateGroundFromHeightMap('myground', '/assets/img/iceland_heightmap.png', {
-      width: 10,
-      height: 10,
-      minHeight: 0,
-      maxHeight: 0.5,
-      subdivisions: 200
-    });
+    const grid = {
+      'h' : 8,
+      'w' : 8
+    };
+    const tiledGround = MeshBuilder.CreateTiledGround("tiled ground", {xmin: -3, zmin: -3, xmax: 3, zmax: 3, subdivisions: grid}, this.scene);
 
-    // ground.material = new StandardMaterial('mygroundmat');
-    // ground.material.wireframe = true;                       // show wireframe
+    const grassMaterial = new StandardMaterial("grass");
+    grassMaterial.diffuseTexture = new Texture("/assets/art/textures/grass.png");
+
+    const rockMaterial = new StandardMaterial("rock");
+    rockMaterial.diffuseTexture = new Texture("/assets/art/textures/rock.png");
+
+    const multimat = new MultiMaterial("multi", this.scene);
+    multimat.subMaterials.push(grassMaterial);
+    multimat.subMaterials.push(rockMaterial);
+
+    tiledGround.material = multimat;
+
+    const verticesCount = tiledGround.getTotalVertices();
+    const tileIndicesLength = tiledGround.getIndices().length / (grid.w * grid.h);
+    tiledGround.subMeshes = [];
+
+    let base = 0;
+    for (let row = 0; row < grid.h; row++) {
+        for (let col = 0; col < grid.w; col++) {
+            tiledGround.subMeshes.push( new SubMesh(row%2 ^ col%2, 0, verticesCount, base , tileIndicesLength, tiledGround) );
+            base += tileIndicesLength;
+        }
+    }
 
   }
 
