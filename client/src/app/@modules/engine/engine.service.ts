@@ -8,7 +8,7 @@ import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { MeshBuilder } from '@babylonjs/core/Meshes';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
-import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera';
+import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { HemisphericLight } from '@babylonjs/core';
 import { Vector3 } from '@babylonjs/core';
 import { Inspector } from '@babylonjs/inspector';
@@ -68,23 +68,15 @@ export class EngineService {
 
     // use hemispheric light
     const light = new HemisphericLight("mylight", new Vector3(1, 1, 1), this.scene);
-    light.intensity = 0.7;
+    light.intensity = 0.85;
 
-    // use universal camera
-    const camera = new UniversalCamera('mycamera', new Vector3(0, 5, -10), this.scene);
-    // camera.rotation.x = 0.5;         // set rotation manually...
-    camera.setTarget(Vector3.Zero());   // or set rotation using a target (here, the scene origin)
+    // set camera
+    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, new Vector3(0, 1, 0), this.scene);
+    camera.radius = 3;
+    camera.wheelPrecision = 100;
     camera.attachControl(this._canvas.nativeElement, true);
 
-    // create a box
-    // const box = MeshBuilder.CreateBox("mybox", {}, this.scene);
-
-    // create a ground plane
-    // const ground = MeshBuilder.CreateGround('myground', {
-    //   width: 10,
-    //   height: 10,
-    //   subdivisions: 30
-    // });
+    // @todo: write example
 
     // create ground plane from heightmap
     const ground = MeshBuilder.CreateGroundFromHeightMap('myground', '/assets/img/iceland_heightmap.png', {
