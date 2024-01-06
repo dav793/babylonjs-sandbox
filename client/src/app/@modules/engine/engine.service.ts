@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, Color4, ShaderMaterial, Camera, MeshBuilder } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -114,58 +114,29 @@ export class EngineService {
 
     this._renderer = this.scene.enableDepthRenderer();
 
-    // create custom model with custom material
-    // resources:
-    // - https://www.smashingmagazine.com/2016/11/building-shaders-with-babylon-js/
-
-    this.createDioramaModelAsync();
+    this.createTerrainAsync();
   }
 
-  async createDioramaModelAsync(): Promise<void> {
-    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Prop_Diorama_01.glb', this.scene);
+  async createTerrainAsync(): Promise<void> {
 
-    const myMaterial_base = new StandardMaterial('MatDiorama.base', this.scene);
-    myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
-    models.meshes[2].material = myMaterial_base;
+    const plane = MeshBuilder.CreatePlane('terrain', { size: 10 }, this.scene);
+    plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
 
-    // const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/pixellated', {
-    //   attributes: ["position", "normal", "uv"],
-    //   uniforms: ["worldViewProjection"]
-    // });
+    const terrainTex = new Texture('/assets/art/textures/SandTexture1.png', this.scene);
+    const terrainMat = new ShaderMaterial('MatTerrain', this.scene, '/assets/shaders/terrain', {
+      attributes: ['position', 'uv'],
+      uniforms: ['worldViewProjection']
+    });
+    terrainMat.setTexture('textureSampler', terrainTex);
 
-    // const resX = this.width / this.pixelSize;
-    // const resY = this.height / this.pixelSize;
-    // customShaderMaterial.setVector4("resolution", new Vector4(
-    //   resX,
-    //   resY,
-    //   1 / resX,
-    //   1 / resY
-    // ));
+    // terrainMat.setFloat('cellSize', 1);
+    terrainMat.setFloat('cellSize', 1);
+    terrainMat.setFloat('lineWidth', 0.05);
+    // terrainMat.setFloat('lineWidth', 0.3);
+    // terrainMat.setColor4('gridColor', new Color4(0.25, 0.42, 0.66, 0.15));
+    terrainMat.setColor4('gridColor', new Color4(0, 0.4, 1, 0.15));
 
-    // customShaderMaterial.setFloat("normalEdgeStrength", this.normalEdgeStrength);
-    // customShaderMaterial.setFloat("depthEdgeStrength", this.depthEdgeStrength);
-
-    // const myDiffuseTex = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    // const myDepthTex = this._renderer.getDepthMap();
-    // const myNormalTex = new Texture('/assets/art/textures/Texture_01_normal.png', this.scene, true, false);
-    // customShaderMaterial.setTexture("tDiffuse", myDiffuseTex);
-    // customShaderMaterial.setTexture("tDepth", myDepthTex);
-    // customShaderMaterial.setTexture("tNormal", myNormalTex);
-
-    // customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
-    
-
-
-
-    // this._customShaderMaterial = this.createShaderMaterial_Basic();
-    // this._customShaderMaterial = this.createShaderMaterial_BlackAndWhite();
-    // this._customShaderMaterial = this.createShaderMaterial_Cell();
-    // this._customShaderMaterial = this.createShaderMaterial_Phong();
-    // this._customShaderMaterial = this.createShaderMaterial_Discard();
-    // this._customShaderMaterial = this.createShaderMaterial_Wave();
-    this._customShaderMaterial = this.createShaderMaterial_Fresnel();
-
-    models.meshes[1].material = this._customShaderMaterial;
+    plane.material = terrainMat;
 
   }
 
