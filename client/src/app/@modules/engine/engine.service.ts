@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -18,22 +18,25 @@ export class EngineService {
 
   engine: Engine;
   scene: Scene;
+  camera: Camera;
   fpsChanges$ = new BehaviorSubject<string>("");
 
   private _canvas: ElementRef<HTMLCanvasElement>;
+  private _currentTime: number;
   private _currentFrame: number;
   private _currentFps: number;
   private _isRunningEngine = false;
 
   private _renderer: any;
+  private _customShaderMaterial: ShaderMaterial;
 
-  private pixelAlignedPanning = true;
-  private normalEdgeStrength = 0.3;
-  private depthEdgeStrength = 0.4;
-  // private pixelSize = 1;
-  private pixelSize = 6;
-  private width = window.innerWidth;
-  private height = window.innerHeight;
+  // private pixelAlignedPanning = true;
+  // private normalEdgeStrength = 0.3;
+  // private depthEdgeStrength = 0.4;
+  // // private pixelSize = 1;
+  // private pixelSize = 6;
+  // private width = window.innerWidth;
+  // private height = window.innerHeight;
 
   constructor() { }
 
@@ -60,12 +63,14 @@ export class EngineService {
       return; 
     this._isRunningEngine = true;
     this._currentFrame = 0;
+    this._currentTime = 0;
 
     const scene = this.scene;
 
     this.engine.runRenderLoop(() => {
       scene.render();
       this.updateMetrics();
+      this.updateShaderMaterial();
     });
   }
 
@@ -84,6 +89,15 @@ export class EngineService {
     }
 
     this._currentFrame = this._currentFrame > 1000000 ? 0 : this._currentFrame + 1;
+
+    this._currentTime += this.engine.getDeltaTime();
+  }
+
+  updateShaderMaterial() {
+    if (!this._customShaderMaterial)
+      return;
+    
+    this._customShaderMaterial.setFloat("time", this._currentTime/500);
   }
 
   runExampleScene() {
@@ -96,54 +110,155 @@ export class EngineService {
     const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, Vector3.Zero(), this.scene);
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(this._canvas.nativeElement, true);
+    this.camera = camera;
 
     this._renderer = this.scene.enableDepthRenderer();
 
     // create custom model with custom material
+    // resources:
+    // - https://www.smashingmagazine.com/2016/11/building-shaders-with-babylon-js/
+
     this.createDioramaModelAsync();
   }
 
   async createDioramaModelAsync(): Promise<void> {
     const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Prop_Diorama_01.glb', this.scene);
-    
-    // const myMaterial_main = new StandardMaterial('MatDiorama.main', this.scene);
-    // myMaterial_main.diffuseTexture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    // myMaterial_main.specularColor = new Color3(0.1, 0.1, 0.1);
-    // models.meshes[1].material = myMaterial_main;
 
     const myMaterial_base = new StandardMaterial('MatDiorama.base', this.scene);
     myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
     models.meshes[2].material = myMaterial_base;
 
-    // const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/default', {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/pixellated', {
+    // const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/pixellated', {
+    //   attributes: ["position", "normal", "uv"],
+    //   uniforms: ["worldViewProjection"]
+    // });
+
+    // const resX = this.width / this.pixelSize;
+    // const resY = this.height / this.pixelSize;
+    // customShaderMaterial.setVector4("resolution", new Vector4(
+    //   resX,
+    //   resY,
+    //   1 / resX,
+    //   1 / resY
+    // ));
+
+    // customShaderMaterial.setFloat("normalEdgeStrength", this.normalEdgeStrength);
+    // customShaderMaterial.setFloat("depthEdgeStrength", this.depthEdgeStrength);
+
+    // const myDiffuseTex = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    // const myDepthTex = this._renderer.getDepthMap();
+    // const myNormalTex = new Texture('/assets/art/textures/Texture_01_normal.png', this.scene, true, false);
+    // customShaderMaterial.setTexture("tDiffuse", myDiffuseTex);
+    // customShaderMaterial.setTexture("tDepth", myDepthTex);
+    // customShaderMaterial.setTexture("tNormal", myNormalTex);
+
+    // customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
+    
+
+
+
+    // this._customShaderMaterial = this.createShaderMaterial_Basic();
+    // this._customShaderMaterial = this.createShaderMaterial_BlackAndWhite();
+    // this._customShaderMaterial = this.createShaderMaterial_Cell();
+    // this._customShaderMaterial = this.createShaderMaterial_Phong();
+    // this._customShaderMaterial = this.createShaderMaterial_Discard();
+    // this._customShaderMaterial = this.createShaderMaterial_Wave();
+    this._customShaderMaterial = this.createShaderMaterial_Fresnel();
+
+    models.meshes[1].material = this._customShaderMaterial;
+
+  }
+
+  createShaderMaterial_Basic(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/basic', {
       attributes: ["position", "uv"],
       uniforms: ["worldViewProjection"]
     });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
 
-    const resX = this.width / this.pixelSize;
-    const resY = this.height / this.pixelSize;
-    customShaderMaterial.setVector4("resolution", new Vector4(
-      resX,
-      resY,
-      1 / resX,
-      1 / resY
-    ));
+    return customShaderMaterial;
+  }
 
-    customShaderMaterial.setFloat("normalEdgeStrength", this.normalEdgeStrength);
-    customShaderMaterial.setFloat("depthEdgeStrength", this.depthEdgeStrength);
+  createShaderMaterial_BlackAndWhite(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/blackandwhite', {
+      attributes: ["position", "uv"],
+      uniforms: ["worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
 
-    const myDiffuseTex = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    const myDepthTex = this._renderer.getDepthMap();
-    const myNormalTex = new Texture('/assets/art/textures/Texture_01_normal.png', this.scene, true, false);
-    customShaderMaterial.setTexture("tDiffuse", myDiffuseTex);
-    customShaderMaterial.setTexture("tDepth", myDepthTex);
-    customShaderMaterial.setTexture("tNormal", myNormalTex);
+    return customShaderMaterial;
+  }
 
-    // customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
-    models.meshes[1].material = customShaderMaterial;
+  createShaderMaterial_Cell(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/cell', {
+      attributes: ["position", "normal", "uv"],
+      uniforms: ["world", "worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
 
-    // console.log('models: ', models);
+    return customShaderMaterial;
+  }
+
+  createShaderMaterial_Phong(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/phong', {
+      attributes: ["position", "normal", "uv"],
+      uniforms: ["world", "worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
+
+    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
+
+    return customShaderMaterial;
+  }
+
+  createShaderMaterial_Discard(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/discard', {
+      attributes: ["position", "uv"],
+      uniforms: ["worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
+
+    return customShaderMaterial;
+  }
+
+  createShaderMaterial_Wave(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/wave', {
+      attributes: ["position", "normal", "uv"],
+      uniforms: ["world", "worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
+
+    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
+
+    customShaderMaterial.setFloat("time", this._currentTime/500);
+
+    return customShaderMaterial;
+  }
+
+  createShaderMaterial_Fresnel(): ShaderMaterial {
+    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/fresnel', {
+      attributes: ["position", "normal", "uv"],
+      uniforms: ["world", "worldViewProjection"]
+    });
+  
+    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
+    customShaderMaterial.setTexture("textureSampler", texture);
+
+    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
+
+    return customShaderMaterial;
   }
 
 }
