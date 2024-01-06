@@ -5,13 +5,16 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera, MeshBuilder } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera, MeshBuilder, RegisterMaterialPlugin } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
+
+import { EngineUtil } from 'src/app/@shared/engine.util';
+import { BlackAndWhitePluginMaterial } from './material.plugin';
 
 @Injectable()
 export class EngineService {
@@ -102,12 +105,28 @@ export class EngineService {
 
   async createSceneObjectsAsync(): Promise<void> {
 
+    // see docs:
+    // https://doc.babylonjs.com/features/featuresDeepDive/materials/using/materialPlugins
+
     const plane = MeshBuilder.CreatePlane("plane", {
       size: 10
     }, this.scene);
     plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
 
+    const material = new StandardMaterial('myMat', this.scene);
+    const texture = await EngineUtil.LoadTextureAsync('/assets/art/textures/Texture_01.png', this.scene);
+    material.diffuseTexture = texture;
     
+    // apply plugin to all materials (not working)
+    // RegisterMaterialPlugin("BlackAndWhite", (material) => {
+    //   (material as any)['blackandwhite'] = new BlackAndWhitePluginMaterial(material);
+    //   return (material as any)['blackandwhite'];
+    // });
+
+    // apply plugin to a single material
+    const myPlugin = new BlackAndWhitePluginMaterial(material);
+
+    plane.material = material;
 
   }
 
