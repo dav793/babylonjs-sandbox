@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, Color4, ShaderMaterial, Camera, MeshBuilder } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Matrix, Vector3, Vector4, Color3, Color4, ShaderMaterial, Camera, MeshBuilder, Tools, Ray, PickingInfo, Vector2 } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -107,9 +107,17 @@ export class EngineService {
     light.intensity = 0.85;
 
     // set camera
-    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, Vector3.Zero(), this.scene);
+    const camera = new ArcRotateCamera("myCamera", -Tools.ToRadians(90), Tools.ToRadians(60), 16, Vector3.Zero(), this.scene);
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(this._canvas.nativeElement, true);
+    
+    // zoom constraints
+    camera.lowerRadiusLimit = 3;
+    camera.upperRadiusLimit = 60;
+    
+    // latitudinal rotation constraints (up/down)
+    camera.upperBetaLimit = Tools.ToRadians(80);
+
     this.camera = camera;
 
     this._renderer = this.scene.enableDepthRenderer();
@@ -119,8 +127,15 @@ export class EngineService {
 
   async createTerrainAsync(): Promise<void> {
 
-    const plane = MeshBuilder.CreatePlane('terrain', { size: 10 }, this.scene);
-    plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);
+    // set up ground plane
+    const groundSize = 10;
+    const cellSize = 1;
+    const gridWidth = 0.02;
+    const gridColor = new Color4(0, 0.4, 1, 0.15);
+
+    const plane = MeshBuilder.CreatePlane('terrain', { size: groundSize }, this.scene);
+    plane.metadata = 'ground';
+    plane.rotate(new Vector3(1, 0, 0), Tools.ToRadians(90));
 
     const terrainTex = new Texture('/assets/art/textures/SandTexture1.png', this.scene);
     const terrainMat = new ShaderMaterial('MatTerrain', this.scene, '/assets/shaders/terrain', {
@@ -128,108 +143,47 @@ export class EngineService {
       uniforms: ['worldViewProjection']
     });
     terrainMat.setTexture('textureSampler', terrainTex);
-
-    // terrainMat.setFloat('cellSize', 1);
-    terrainMat.setFloat('cellSize', 1);
-    terrainMat.setFloat('lineWidth', 0.05);
-    // terrainMat.setFloat('lineWidth', 0.3);
-    // terrainMat.setColor4('gridColor', new Color4(0.25, 0.42, 0.66, 0.15));
-    terrainMat.setColor4('gridColor', new Color4(0, 0.4, 1, 0.15));
+    terrainMat.setFloat('groundSize', groundSize);
+    terrainMat.setFloat('cellSize', cellSize);
+    terrainMat.setFloat('lineWidth', gridWidth);
+    terrainMat.setColor4('gridColor', gridColor);
+    terrainMat.setInt('pointerOnMesh', 0);
+    terrainMat.setVector2('pointerCoords', new Vector2(null, null));
 
     plane.material = terrainMat;
 
+    // set up mouse listener
+    this.scene.onPointerMove = () => {
+      // resources on raycasting:
+      // - https://www.youtube.com/watch?v=dgsWKpa7RcY
+      // - https://playground.babylonjs.com/#AC8XPN
+
+      const ray: Ray = this.scene.createPickingRay(this.scene.pointerX, this.scene.pointerY, Matrix.Identity(), this.camera);
+      const hit: PickingInfo = this.scene.pickWithRay(ray);
+
+      if (hit.pickedMesh && hit.pickedMesh.metadata === 'ground') {
+        
+        const cellIndex = this.parseGroundCoords(
+          new Vector2( hit.pickedPoint.x, hit.pickedPoint.z ),
+          cellSize,
+          Math.floor(groundSize / cellSize)
+        );
+        
+        terrainMat.setInt('pointerOnMesh', 1);
+        terrainMat.setVector2('pointerCoords', cellIndex);
+      }
+      else
+        terrainMat.setInt('pointerOnMesh', 0);
+    };
+
   }
 
-  createShaderMaterial_Basic(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/basic', {
-      attributes: ["position", "uv"],
-      uniforms: ["worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_BlackAndWhite(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/blackandwhite', {
-      attributes: ["position", "uv"],
-      uniforms: ["worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_Cell(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/cell', {
-      attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_Phong(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/phong', {
-      attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_Discard(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/discard', {
-      attributes: ["position", "uv"],
-      uniforms: ["worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_Wave(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/wave', {
-      attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
-
-    customShaderMaterial.setFloat("time", this._currentTime/500);
-
-    return customShaderMaterial;
-  }
-
-  createShaderMaterial_Fresnel(): ShaderMaterial {
-    const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/fresnel', {
-      attributes: ["position", "normal", "uv"],
-      uniforms: ["world", "worldViewProjection"]
-    });
-  
-    const texture = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    customShaderMaterial.setTexture("textureSampler", texture);
-
-    customShaderMaterial.setVector3("cameraPosition", this.camera.position);
-
-    return customShaderMaterial;
+  parseGroundCoords(position: Vector2, cellSize: number, gridSize: number): Vector2 {
+    const cellIndex = new Vector2(
+      Math.floor(position.x / cellSize) + gridSize/2,
+      Math.floor(position.y / cellSize) + gridSize/2
+    );
+    return cellIndex;
   }
 
 }

@@ -6,9 +6,12 @@ attribute vec2 uv;
 
 // Uniforms
 uniform mat4 worldViewProjection;
+uniform float groundSize;
 uniform float cellSize;
 uniform float lineWidth;
 uniform vec4 gridColor;
+uniform int pointerOnMesh;
+uniform vec2 pointerCoords;
 
 // Varying
 varying vec2 vUV;
