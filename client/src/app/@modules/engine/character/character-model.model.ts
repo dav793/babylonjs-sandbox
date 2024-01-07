@@ -193,7 +193,7 @@ export class CharacterBodySlotModelType {
             alphaMaps: {
                 torso_over: [
                     {
-                        applyWith: ['Male_ButtonShirt_Open'],
+                        applyWith: ['Male_Jacket_Open', 'Male_ButtonShirt_Open'],
                         texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_ButtonShirt_Open.png'
                     }
@@ -229,12 +229,21 @@ export class CharacterBodySlotModelType {
             alphaMaps: {
                 torso_over: [
                     {
-                        applyWith: ['Male_ButtonShirt_Open'],
+                        applyWith: ['Male_Jacket_Open', 'Male_ButtonShirt_Open'],
                         texturePath: 'characters/Male/AlphaMaps',
                         textureFilename: 'UV_MaleBody_Shirt_AlphaMap_ButtonShirt_Open.png'
                     }
                 ]
             }
+        },
+        {
+            name: 'Male_Jacket_Open',
+            bodySlot: CharacterBodySlot.Torso_Over,
+            modelPath: 'characters/Male',
+            modelFilename: 'MaleBody_Jacket_Open.glb',
+            texturePath: 'characters/Male',
+            textureFilename: 'UV_MaleBody_Jacket_24.png',
+            alphaMaps: {}
         },
         {
             name: 'Male_ButtonShirt_Open',
