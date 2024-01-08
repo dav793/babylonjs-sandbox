@@ -116,9 +116,12 @@ export class EngineService {
       'Male_Skin',
       'Male_Shirt',
       // 'Male_ButtonShirt_Open',
-      'Male_Shorts',
+      'Male_LeatherJacket_Open',
+      // 'Male_Shorts',
+      // 'Male_Pants',
+      'Male_Jeans',
       'Male_Sneakers',
-      'Male_BaseballCap'
+      // 'Male_BaseballCap'
     ];
     this.characterModelCollection = await this.characterModelFactory.createCharacterModel( this.characterModelIdentifier, equipped );
     
