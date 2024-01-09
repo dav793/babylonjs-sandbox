@@ -139,7 +139,8 @@ export class EngineService {
 
   createThinInstancesWithPrebuiltBuffers() {
     const cellSize = 1;
-    const gridSize = 16;
+    // const gridSize = 24;
+    const gridSize = 8;
 
     const plane = MeshBuilder.CreatePlane("plane", { size: cellSize }, this.scene);
     plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
@@ -189,18 +190,25 @@ export class EngineService {
         // );
 
         selectionPlane.setEnabled(true);
-        // const posX = Math.floor(pickInfo.thinInstanceIndex / gridSize) * cellSize;
-        const posX = Math.floor(pickInfo.thinInstanceIndex / gridSize) * cellSize - (gridSize * cellSize / 2) + cellSize / 2;
-        // const posZ = (pickInfo.thinInstanceIndex % gridSize) * cellSize;
-        const posZ = (pickInfo.thinInstanceIndex % gridSize) * cellSize - (gridSize * cellSize / 2) + cellSize / 2;
-        // selectionPlane.position = new Vector3(posX - cellSize, 0, posZ - cellSize);
-        selectionPlane.position = new Vector3(posX, 0, posZ);
+
+        const gridOffset = gridSize * cellSize / 2;
+        const posx = Math.floor(pickInfo.thinInstanceIndex / gridSize) * cellSize - gridOffset;
+        const posz = (pickInfo.thinInstanceIndex % gridSize) * cellSize - gridOffset;
+
+        selectionPlane.position = new Vector3(posx, 0, posz);
 
         // console.log(pickInfo.pickedPoint, pickInfo.thinInstanceIndex);
       }
       else
         selectionPlane.setEnabled(false);
     };
+  }
+
+  createThinInstancesWithCustomShader() {
+    const cellSize = 1;
+    const gridSize = 8;
+
+    // @todo: write this
   }
 
 }

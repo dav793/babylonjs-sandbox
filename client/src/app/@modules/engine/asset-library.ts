@@ -36,9 +36,11 @@ export class AssetLibrary {
     static async _setup_Footpath_Tile(): Promise<void> {
         const identifier = 'Footpath-Tile';
 
-        const textureDiffuse = await EngineUtil.LoadTextureAsync('/assets/art/textures/Footpath_Tiles_Texture_01.png', AssetLibrary.scene);
-        const textureNormals = await EngineUtil.LoadTextureAsync('/assets/art/textures/Footpath_Tiles_Normals_01.png', AssetLibrary.scene);
-        AssetLibrary.textureCache[identifier] = { diffuse: textureDiffuse, normals: textureNormals };
+        // const textureDiffuse = await EngineUtil.LoadTextureAsync('/assets/art/textures/Footpath_Tiles_Texture_01.png', AssetLibrary.scene);
+        const textureDiffuse = await EngineUtil.LoadTextureAsync('/assets/art/textures/Footpath_Tiles_Texture_01_compressed.jpg', AssetLibrary.scene);
+        // const textureNormals = await EngineUtil.LoadTextureAsync('/assets/art/textures/Footpath_Tiles_Normals_01.png', AssetLibrary.scene);
+        // AssetLibrary.textureCache[identifier] = { diffuse: textureDiffuse, normals: textureNormals };
+        AssetLibrary.textureCache[identifier] = { diffuse: textureDiffuse };
 
         const material = new StandardMaterial(`Mat-${identifier}`, AssetLibrary.scene);
         material.diffuseTexture = textureDiffuse;
