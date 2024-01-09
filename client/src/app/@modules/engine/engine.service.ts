@@ -115,13 +115,12 @@ export class EngineService {
     const equipped = [
       'Male_Skin',
       'Male_Shirt',
-      // 'Male_ButtonShirt_Open',
       'Male_LeatherJacket_Open',
       // 'Male_Shorts',
-      // 'Male_Pants',
+      // 'Male_Leggings',
       'Male_Jeans',
       'Male_Sneakers',
-      // 'Male_BaseballCap'
+      'Male_SportHat'
     ];
     this.characterModelCollection = await this.characterModelFactory.createCharacterModel( this.characterModelIdentifier, equipped );
     

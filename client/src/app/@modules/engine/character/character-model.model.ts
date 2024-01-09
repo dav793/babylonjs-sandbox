@@ -217,9 +217,9 @@ export class CharacterBodySlotModelType {
                         textureFilename: 'UV_MaleBody_Skin_AlphaMap_Jeans.png'
                     },
                     {
-                        applyWith: ['Male_Pants'],
+                        applyWith: ['Male_Leggings'],
                         texturePath: 'characters/Male/AlphaMaps',
-                        textureFilename: 'UV_MaleBody_Skin_AlphaMap_Pants.png'
+                        textureFilename: 'UV_MaleBody_Skin_AlphaMap_Leggings.png'
                     },
                     {
                         applyWith: ['Male_Shorts'],
@@ -278,18 +278,18 @@ export class CharacterBodySlotModelType {
             }
         },
         {
-            name: 'Male_Pants',
+            name: 'Male_Leggings',
             bodySlot: CharacterBodySlot.Legs,
             modelPath: 'characters/Male',
-            modelFilename: 'MaleBody_Pants.glb',
+            modelFilename: 'MaleBody_Leggings.glb',
             texturePath: 'characters/Male',
-            textureFilename: 'UV_MaleBody_Pants_256.jpg',
+            textureFilename: 'UV_MaleBody_Leggings_256.jpg',
             alphaMaps: {
                 torso_over: [
                     {
                         applyWith: ['Male_LeatherJacket_Open'],
                         texturePath: 'characters/Male/AlphaMaps',
-                        textureFilename: 'UV_MaleBody_Pants_AlphaMap_LeatherJacket.png'
+                        textureFilename: 'UV_MaleBody_Leggings_AlphaMap_LeatherJacket.png'
                     }
                 ]
             }
@@ -321,12 +321,12 @@ export class CharacterBodySlotModelType {
             alphaMaps: {}
         },
         {
-            name: 'Male_BaseballCap',
+            name: 'Male_SportHat',
             bodySlot: CharacterBodySlot.Head_Hat,
             modelPath: 'characters/Male',
-            modelFilename: 'MaleBody_BaseballCap.glb',
+            modelFilename: 'MaleBody_SportHat.glb',
             texturePath: 'characters/Male',
-            textureFilename: 'UV_MaleBody_BaseballCap_256.jpg',
+            textureFilename: 'UV_MaleBody_SportHat_24.jpg',
             alphaMaps: {}
         }
     ];
