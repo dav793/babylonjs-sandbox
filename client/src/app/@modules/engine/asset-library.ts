@@ -42,7 +42,7 @@ export class AssetLibrary {
 
         const material = new StandardMaterial(`Mat-${identifier}`, AssetLibrary.scene);
         material.diffuseTexture = textureDiffuse;
-        material.bumpTexture = textureNormals;
+        // material.bumpTexture = textureNormals;
         material.specularColor = new Color3(0.3, 0.3, 0.3);
         AssetLibrary.materialCache[identifier] = material;
     }

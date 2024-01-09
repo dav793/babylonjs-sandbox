@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, Camera, MeshBuilder } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, Color4, Camera, MeshBuilder, Matrix, Tools, StandardMaterial, Material } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -84,24 +84,123 @@ export class EngineService {
     light.intensity = 0.85;
 
     // set camera
-    const camera = new ArcRotateCamera("myCamera", -Math.PI / 2, Math.PI / 2 - 0.4, 16, Vector3.Zero(), this.scene);
+    const camera = new ArcRotateCamera("myCamera", -Tools.ToRadians(90), Tools.ToRadians(45), 16, Vector3.Zero(), this.scene);
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(this._canvas.nativeElement, true);
     this.camera = camera;
 
-    this.createSceneObjectsAsync();
+    AssetLibrary.init(this.scene)
+      .then(() => this.createSceneObjects());
   }
 
-  async createSceneObjectsAsync(): Promise<void> {
+  createSceneObjects() {
 
-    await AssetLibrary.init(this.scene);
+    // see docs:
+    // - https://doc.babylonjs.com/features/featuresDeepDive/mesh/copies/thinInstances
 
+    // this.createThinInstancesWithAttributes();
+    this.createThinInstancesWithPrebuiltBuffers();
+
+  }
+
+  createThinInstancesWithAttributes() {
     const plane = MeshBuilder.CreatePlane("plane", { size: 1 }, this.scene);
     plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
     plane.material = AssetLibrary.getMaterial('Footpath-Tile');
 
-    // @todo: create thin instances
+    const positions: Matrix[] = [
+      Matrix.Translation(0, 0, 0),
+      Matrix.Translation(1, 0, 0),
+      Matrix.Translation(1, 1, 0),
+      Matrix.Translation(0, 1, 0),
+      Matrix.Translation(-1, 1, 0),
+      Matrix.Translation(-1, 0, 0),
+      Matrix.Translation(-1, -1, 0),
+      Matrix.Translation(0, -1, 0),
+      Matrix.Translation(1, -1, 0)
+    ];
+    const idx = plane.thinInstanceAdd(positions);
+    // console.log(idx);
+    // console.log(plane.thinInstanceCount);
+    
+    plane.thinInstanceRegisterAttribute('color', 4);
+    plane.thinInstanceSetAttributeAt('color', 0, [
+      1, 0, 0, 1, 
+      0, 1, 0, 1, 
+      0, 0, 1, 1, 
+      0, 0, 0, 1,
+      1, 1, 1, 1,
+      1, 1, 1, 1,
+      1, 1, 1, 1,
+      1, 1, 1, 1,
+      1, 1, 1, 1
+    ]);
+  }
 
+  createThinInstancesWithPrebuiltBuffers() {
+    const cellSize = 1;
+    const gridSize = 16;
+
+    const plane = MeshBuilder.CreatePlane("plane", { size: cellSize }, this.scene);
+    plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
+    plane.material = AssetLibrary.getMaterial('Footpath-Tile');
+
+    // set positions
+    const bufferMatrices = new Float32Array(16 * gridSize * gridSize);  // 16: 4 floats (4 bytes each)
+    for (let i = 0; i < gridSize; ++i) {
+      for (let j = 0; j < gridSize; ++j) {
+        const byteOffset = i * 16 * gridSize + j * 16;
+        Matrix.Translation(i - Math.floor(gridSize/2), j - Math.floor(gridSize/2), 0).copyToArray(bufferMatrices, byteOffset);
+      }
+    }
+    plane.thinInstanceSetBuffer('matrix', bufferMatrices, 16, true);  // staticBuffer set to true, is faster but it means we will never update this buffer
+
+    // set colors
+    const bufferColors = new Float32Array(4 * gridSize * gridSize);   // 4: 4 floats (1 byte each)
+    let colorsArr: number[] = [];
+    for (let i = 0; i < gridSize; ++i) {
+      for (let j = 0; j < gridSize; ++j) {
+        colorsArr = colorsArr.concat([0.8, 0.2, 0.9, 1]);
+      }
+    }
+    bufferColors.set(colorsArr);
+    plane.thinInstanceSetBuffer('color', bufferColors, 4, true);
+    // if we update the buffers we passed, we must call thinInstanceBufferUpdated for the changes to take effect.
+
+    // picking instances with raycasting
+    plane.isPickable = true;
+    plane.thinInstanceEnablePicking = true;
+
+    const selectionPlane = MeshBuilder.CreatePlane("selectionPlane", { size: 1 }, this.scene);
+    selectionPlane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis
+    selectionPlane.material = new StandardMaterial('MatSelectionPlane', this.scene);
+    (selectionPlane.material as StandardMaterial).diffuseColor = new Color3(0.5, 0.5, 1);
+    (selectionPlane.material as StandardMaterial).alpha = 0.3;
+    selectionPlane.setEnabled(false);
+
+    this.scene.onPointerDown = (evt, pickInfo) => {
+      if (pickInfo.hit) {
+        // const worldMat = plane.thinInstanceGetWorldMatrices();
+        // const thinInstanceMatrix = worldMat[pickInfo.thinInstanceIndex];
+
+        // selectionPlane.setEnabled(true);
+        // thinInstanceMatrix.getTranslationToRef(
+        //   selectionPlane.position
+        // );
+
+        selectionPlane.setEnabled(true);
+        // const posX = Math.floor(pickInfo.thinInstanceIndex / gridSize) * cellSize;
+        const posX = Math.floor(pickInfo.thinInstanceIndex / gridSize) * cellSize - (gridSize * cellSize / 2) + cellSize / 2;
+        // const posZ = (pickInfo.thinInstanceIndex % gridSize) * cellSize;
+        const posZ = (pickInfo.thinInstanceIndex % gridSize) * cellSize - (gridSize * cellSize / 2) + cellSize / 2;
+        // selectionPlane.position = new Vector3(posX - cellSize, 0, posZ - cellSize);
+        selectionPlane.position = new Vector3(posX, 0, posZ);
+
+        // console.log(pickInfo.pickedPoint, pickInfo.thinInstanceIndex);
+      }
+      else
+        selectionPlane.setEnabled(false);
+    };
   }
 
 }
