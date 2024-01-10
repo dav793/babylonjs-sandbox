@@ -147,15 +147,29 @@ export class EngineService {
 
   async createTerrainAsync(): Promise<void> {
 
-    // parameters
-    const terrainMap = [
-      [ GroundTileType.Grass,         GroundTileType.Grass,           GroundTileType.Leaves,    GroundTileType.Dirt ],
-      [ GroundTileType.Grass,         GroundTileType.Grass_Flowers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked ],
-      [ GroundTileType.Grass_Leaves,  GroundTileType.Grass_Clovers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked_Pebbles ],
-      [ GroundTileType.Mud_Debris,    GroundTileType.Mud,             GroundTileType.Mud,       GroundTileType.Footpath ]
-    ];
+    // manual map
+    // const terrainMap = [
+    //   [ GroundTileType.Grass,         GroundTileType.Grass,           GroundTileType.Leaves,    GroundTileType.Dirt ],
+    //   [ GroundTileType.Grass,         GroundTileType.Grass_Flowers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked ],
+    //   [ GroundTileType.Grass_Leaves,  GroundTileType.Grass_Clovers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked_Pebbles ],
+    //   [ GroundTileType.Mud_Debris,    GroundTileType.Mud,             GroundTileType.Mud,       GroundTileType.Footpath ]
+    // ];
 
-    // internal
+    // procedural map
+    const terrainMap: GroundTileType[][] = [];
+    const mapSize = 32;
+    const randMin = 0;
+    const randMax = 19;
+    for (let i = 0; i < mapSize; ++i) {
+      const row: GroundTileType[] = [];
+      for (let j = 0; j < mapSize; ++j) {
+        const rand = Math.floor(Math.random() * (randMax - randMin + 1) + randMin);
+        row.push(rand as GroundTileType);
+      }
+      terrainMap.push(row);
+    }
+
+    // internal - do not modify
     const terrainRowLength = terrainMap[0].length;
     const terrainColLength = terrainMap.length;
     const tileSize = GroundTileFactory.getTileSize();
