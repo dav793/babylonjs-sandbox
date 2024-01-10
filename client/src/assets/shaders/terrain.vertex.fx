@@ -8,7 +8,7 @@ attribute vec2 uv;
 uniform mat4 worldViewProjection;
 uniform float groundSize;
 uniform float cellSize;
-uniform float lineWidth;
+uniform float gradientSharpness;
 uniform vec4 gridColor;
 uniform int pointerOnMesh;
 uniform vec2 pointerCoords;

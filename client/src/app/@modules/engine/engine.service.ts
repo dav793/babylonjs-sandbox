@@ -127,11 +127,13 @@ export class EngineService {
 
   async createTerrainAsync(): Promise<void> {
 
+    // this.test();
+
     // set up ground plane
-    const groundSize = 10;
+    const groundSize = 32;
     const cellSize = 1;
-    const gridWidth = 0.02;
-    const gridColor = new Color4(0, 0.4, 1, 0.15);
+    const gradientSharpness = 25;
+    const gridColor = new Color4(0, 0.4, 1, 0.20);
 
     const plane = MeshBuilder.CreatePlane('terrain', { size: groundSize }, this.scene);
     plane.metadata = 'ground';
@@ -145,7 +147,7 @@ export class EngineService {
     terrainMat.setTexture('textureSampler', terrainTex);
     terrainMat.setFloat('groundSize', groundSize);
     terrainMat.setFloat('cellSize', cellSize);
-    terrainMat.setFloat('lineWidth', gridWidth);
+    terrainMat.setFloat('gradientSharpness', gradientSharpness);
     terrainMat.setColor4('gridColor', gridColor);
     terrainMat.setInt('pointerOnMesh', 0);
     terrainMat.setVector2('pointerCoords', new Vector2(null, null));
