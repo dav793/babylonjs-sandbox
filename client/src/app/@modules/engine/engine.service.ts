@@ -30,6 +30,9 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
 
+import { GroundTileType } from './ground-tile-library';
+import { GroundTileFactory } from './ground-tile-factory';
+
 @Injectable()
 export class EngineService {
 
@@ -144,48 +147,37 @@ export class EngineService {
 
   async createTerrainAsync(): Promise<void> {
 
-    const customMesh = new Mesh('customTile', this.scene);
-
-    const positions = [ // vertices can be defined in any order
-      -0.5, 0, 0.5,
-      0.5, 0, 0.5,
-      0.5, 0, -0.5,
-      -0.5, 0, -0.5
-    ];
-    const indices = [   // face indices must be in counter-clockwise order for normals to be computed correctly
-      0, 2, 1,
-      0, 3, 2
+    // parameters
+    const terrainMap = [
+      [ GroundTileType.Grass,         GroundTileType.Grass,           GroundTileType.Leaves,    GroundTileType.Dirt ],
+      [ GroundTileType.Grass,         GroundTileType.Grass_Flowers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked ],
+      [ GroundTileType.Grass_Leaves,  GroundTileType.Grass_Clovers,   GroundTileType.Leaves,    GroundTileType.Dirt_Cracked_Pebbles ],
+      [ GroundTileType.Mud_Debris,    GroundTileType.Mud,             GroundTileType.Mud,       GroundTileType.Footpath ]
     ];
 
-    const uvs: any[] = [];
-    for(var p = 0; p < positions.length / 3; p++) {
-      uvs.push((positions[3 * p] - (-0.5)) / 1, (positions[3 * p + 2] - (-0.5)) / 1);
+    // internal
+    const terrainRowLength = terrainMap[0].length;
+    const terrainColLength = terrainMap.length;
+    const tileSize = GroundTileFactory.getTileSize();
+    const tileSizeHalved = tileSize / 2;
+    const terrainSizeX = terrainRowLength * tileSize;
+    const terrainSizeXHalved = terrainSizeX / 2;
+    const offsetX = -terrainSizeXHalved + tileSizeHalved;
+    const terrainSizeY = terrainColLength * tileSize;
+    const terrainSizeYHalved = terrainSizeY / 2;
+    const offsetY = terrainSizeYHalved - tileSizeHalved;
+
+    for (let i = 0; i < terrainColLength; ++i) {
+      for (let j = 0; j < terrainRowLength; ++j) {
+        
+        const tileType = terrainMap[i][j];
+        const posx = offsetX + j * tileSize;
+        const posy = offsetY - i * tileSize;
+
+        const tileMesh = GroundTileFactory.createGroundTileMesh(tileType, this.scene);
+        tileMesh.position = new Vector3(posx, 0, posy);
+      }
     }
-    // const uvs = [
-    //   0, 1,
-    //   1, 1,
-    //   1, 0,
-    //   0, 0
-    // ];
-
-    const normals: any[] = [];
-
-    VertexData.ComputeNormals(positions, indices, normals);
-    const vertexData = new VertexData();
-    vertexData.positions = positions;
-    vertexData.indices = indices;
-    vertexData.normals = normals;
-    vertexData.uvs = uvs;
-
-    vertexData.applyToMesh(customMesh);
-    // customMesh.convertToFlatShadedMesh();
-
-    const tex = new Texture('/assets/art/textures/terrain-atlas1.png', this.scene);
-    const mat = new StandardMaterial('MatTerrain', this.scene);
-    // mat.wireframe = true;
-    mat.diffuseTexture = tex;
-    customMesh.material = mat;
-
   }
 
 }
