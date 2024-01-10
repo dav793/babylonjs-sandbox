@@ -6,8 +6,6 @@ uniform float groundSize;
 uniform float cellSize;
 uniform float gradientSharpness;
 uniform vec4 gridColor;
-uniform int pointerOnMesh;
-uniform vec2 pointerCoords;
 
 // Varying
 varying vec3 vPosition;
@@ -42,15 +40,6 @@ void main(void) {
     float gridAlphaY = gridColor.a * clamp((1.f - diffy*gradientSharpness), 0.f, 1.f);
     if (gridAlphaY > 0.f)
         color = getAlphaBlendedColor( color, vec4( gridColor.rgb, gridAlphaY ) );
-    
-    // fill in cell hovered by pointer
-    if (pointerOnMesh == 1) {
-        float offset = floor(groundSize/cellSize) / 2.f;
-        vec2 realPointerCoords = vec2( pointerCoords.x - offset, pointerCoords.y - offset );
-
-        if ( realPointerCoords.x == floor(vPosition.x) && realPointerCoords.y == floor(vPosition.y) )
-            color = getAlphaBlendedColor(color, vec4(gridColor.rgb, gridColor.a/2.f));
-    }
 
     gl_FragColor = color;
 }

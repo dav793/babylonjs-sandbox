@@ -5,7 +5,24 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Matrix, Vector3, Vector4, Color3, Color4, ShaderMaterial, Camera, MeshBuilder, Tools, Ray, PickingInfo, Vector2 } from '@babylonjs/core';
+import { 
+  SceneLoader, 
+  HemisphericLight, 
+  Matrix, 
+  Vector3, 
+  Vector4, 
+  Color3, 
+  Color4, 
+  ShaderMaterial, 
+  Camera, 
+  MeshBuilder, 
+  Tools, 
+  Ray, 
+  PickingInfo, 
+  Vector2, 
+  Mesh, 
+  VertexData 
+} from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -107,7 +124,7 @@ export class EngineService {
     light.intensity = 0.85;
 
     // set camera
-    const camera = new ArcRotateCamera("myCamera", -Tools.ToRadians(90), Tools.ToRadians(60), 16, Vector3.Zero(), this.scene);
+    const camera = new ArcRotateCamera("myCamera", -Tools.ToRadians(90), Tools.ToRadians(60), 3, Vector3.Zero(), this.scene);
     camera.wheelDeltaPercentage = 0.01;
     camera.attachControl(this._canvas.nativeElement, true);
     
@@ -127,65 +144,48 @@ export class EngineService {
 
   async createTerrainAsync(): Promise<void> {
 
-    // this.test();
+    const customMesh = new Mesh('customTile', this.scene);
 
-    // set up ground plane
-    const groundSize = 32;
-    const cellSize = 1;
-    const gradientSharpness = 25;
-    const gridColor = new Color4(0, 0.4, 1, 0.20);
+    const positions = [ // vertices can be defined in any order
+      -0.5, 0, 0.5,
+      0.5, 0, 0.5,
+      0.5, 0, -0.5,
+      -0.5, 0, -0.5
+    ];
+    const indices = [   // face indices must be in counter-clockwise order for normals to be computed correctly
+      0, 2, 1,
+      0, 3, 2
+    ];
 
-    const plane = MeshBuilder.CreatePlane('terrain', { size: groundSize }, this.scene);
-    plane.metadata = 'ground';
-    plane.rotate(new Vector3(1, 0, 0), Tools.ToRadians(90));
+    const uvs: any[] = [];
+    for(var p = 0; p < positions.length / 3; p++) {
+      uvs.push((positions[3 * p] - (-0.5)) / 1, (positions[3 * p + 2] - (-0.5)) / 1);
+    }
+    // const uvs = [
+    //   0, 1,
+    //   1, 1,
+    //   1, 0,
+    //   0, 0
+    // ];
 
-    const terrainTex = new Texture('/assets/art/textures/SandTexture1.png', this.scene);
-    const terrainMat = new ShaderMaterial('MatTerrain', this.scene, '/assets/shaders/terrain', {
-      attributes: ['position', 'uv'],
-      uniforms: ['worldViewProjection']
-    });
-    terrainMat.setTexture('textureSampler', terrainTex);
-    terrainMat.setFloat('groundSize', groundSize);
-    terrainMat.setFloat('cellSize', cellSize);
-    terrainMat.setFloat('gradientSharpness', gradientSharpness);
-    terrainMat.setColor4('gridColor', gridColor);
-    terrainMat.setInt('pointerOnMesh', 0);
-    terrainMat.setVector2('pointerCoords', new Vector2(null, null));
+    const normals: any[] = [];
 
-    plane.material = terrainMat;
+    VertexData.ComputeNormals(positions, indices, normals);
+    const vertexData = new VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = normals;
+    vertexData.uvs = uvs;
 
-    // set up mouse listener
-    this.scene.onPointerMove = () => {
-      // resources on raycasting:
-      // - https://www.youtube.com/watch?v=dgsWKpa7RcY
-      // - https://playground.babylonjs.com/#AC8XPN
+    vertexData.applyToMesh(customMesh);
+    // customMesh.convertToFlatShadedMesh();
 
-      const ray: Ray = this.scene.createPickingRay(this.scene.pointerX, this.scene.pointerY, Matrix.Identity(), this.camera);
-      const hit: PickingInfo = this.scene.pickWithRay(ray);
+    const tex = new Texture('/assets/art/textures/terrain-atlas1.png', this.scene);
+    const mat = new StandardMaterial('MatTerrain', this.scene);
+    // mat.wireframe = true;
+    mat.diffuseTexture = tex;
+    customMesh.material = mat;
 
-      if (hit.pickedMesh && hit.pickedMesh.metadata === 'ground') {
-        
-        const cellIndex = this.parseGroundCoords(
-          new Vector2( hit.pickedPoint.x, hit.pickedPoint.z ),
-          cellSize,
-          Math.floor(groundSize / cellSize)
-        );
-        
-        terrainMat.setInt('pointerOnMesh', 1);
-        terrainMat.setVector2('pointerCoords', cellIndex);
-      }
-      else
-        terrainMat.setInt('pointerOnMesh', 0);
-    };
-
-  }
-
-  parseGroundCoords(position: Vector2, cellSize: number, gridSize: number): Vector2 {
-    const cellIndex = new Vector2(
-      Math.floor(position.x / cellSize) + gridSize/2,
-      Math.floor(position.y / cellSize) + gridSize/2
-    );
-    return cellIndex;
   }
 
 }

@@ -10,8 +10,6 @@ uniform float groundSize;
 uniform float cellSize;
 uniform float gradientSharpness;
 uniform vec4 gridColor;
-uniform int pointerOnMesh;
-uniform vec2 pointerCoords;
 
 // Varying
 varying vec2 vUV;
