@@ -16,7 +16,8 @@ import {
   MeshBuilder, 
   RegisterMaterialPlugin, 
   RawTexture2DArray, 
-  Color4
+  Color4,
+  Matrix
 } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
@@ -26,6 +27,7 @@ import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
 
 import { EngineUtil } from 'src/app/@shared/engine.util';
+import { AssetLibrary, AssetIdentifier } from 'src/app/@shared/asset.library';
 import { BlackAndWhitePluginMaterial } from './material-plugins/black-and-white-material.plugin';
 import { ColorifyPluginMaterial } from './material-plugins/colorify-material.plugin';
 import { TextureSamplerPluginMaterial } from './material-plugins/texture-sampler-material.plugin';
@@ -123,7 +125,8 @@ export class EngineService {
     // this.createSceneObjectColorifyPluginAsync();
     // this.createSceneTextureSamplerPluginAsync();
     // this.createSceneAttributesPluginAsync();
-    this.createSceneGridPluginAsync();
+    // this.createSceneGridPluginAsync();
+    this.createSceneGridThinInstancePluginAsync();
   }
 
   async createSceneObjectBlackAndWhitePluginAsync(): Promise<void> {
@@ -255,6 +258,40 @@ export class EngineService {
     myPlugin.gridColor = new Color4(0, 0.4, 1, 0.20);
 
     plane.material = material;
+    myPlugin.isEnabled = true;
+
+  }
+
+  async createSceneGridThinInstancePluginAsync(): Promise<void> {
+    
+    const gridSize = 5;
+    const planeSize = 10;
+
+    await AssetLibrary.init(this.scene);
+    const material = AssetLibrary.getMaterial(AssetIdentifier.TileDirt);
+    const myPlugin = new GridPluginMaterial(material);
+    myPlugin.cellSize = 1;
+    myPlugin.gradientSharpness = 25;
+    myPlugin.gridColor = new Color4(0, 0.4, 1, 0.20);
+
+    const plane = MeshBuilder.CreatePlane('plane', { size: planeSize }, this.scene);
+    plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
+    plane.material = material;
+
+    // set positions
+    const bufferMatrices = new Float32Array(16 * gridSize * gridSize);  // 16: 4 floats (4 bytes each)
+    for (let i = 0; i < gridSize; ++i) {
+      for (let j = 0; j < gridSize; ++j) {
+        const byteOffset = i * 16 * gridSize + j * 16;
+        Matrix.Translation( i * planeSize, j * planeSize, 0 ).copyToArray(bufferMatrices, byteOffset);
+      }
+    }
+    plane.thinInstanceSetBuffer('matrix', bufferMatrices, 16, true);  // staticBuffer set to true, is faster but it means we will never update this buffer
+
+    // enable picking instances with raycasting
+    plane.isPickable = true;
+    plane.thinInstanceEnablePicking = true;
+
     myPlugin.isEnabled = true;
 
   }
