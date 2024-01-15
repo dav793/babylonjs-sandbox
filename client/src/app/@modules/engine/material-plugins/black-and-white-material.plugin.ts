@@ -1,5 +1,10 @@
 
-import { Material, MaterialPluginBase, Mesh, Scene } from '@babylonjs/core';
+import { 
+    Material, 
+    MaterialPluginBase, 
+    Mesh, 
+    Scene 
+} from '@babylonjs/core';
 
 export class BlackAndWhitePluginMaterial extends MaterialPluginBase {
 
