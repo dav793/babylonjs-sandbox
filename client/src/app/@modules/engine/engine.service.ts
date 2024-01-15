@@ -15,7 +15,8 @@ import {
   Camera, 
   MeshBuilder, 
   RegisterMaterialPlugin, 
-  RawTexture2DArray 
+  RawTexture2DArray, 
+  Color4
 } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
@@ -29,6 +30,7 @@ import { BlackAndWhitePluginMaterial } from './material-plugins/black-and-white-
 import { ColorifyPluginMaterial } from './material-plugins/colorify-material.plugin';
 import { TextureSamplerPluginMaterial } from './material-plugins/texture-sampler-material.plugin';
 import { AttributePluginMaterial } from './material-plugins/attribute-material.plugin';
+import { GridPluginMaterial } from './material-plugins/grid-material.plugin';
 
 @Injectable()
 export class EngineService {
@@ -120,7 +122,8 @@ export class EngineService {
     // this.createSceneObjectBlackAndWhitePluginAsync();
     // this.createSceneObjectColorifyPluginAsync();
     // this.createSceneTextureSamplerPluginAsync();
-    this.createSceneAttributesPluginAsync();
+    // this.createSceneAttributesPluginAsync();
+    this.createSceneGridPluginAsync();
   }
 
   async createSceneObjectBlackAndWhitePluginAsync(): Promise<void> {
@@ -232,6 +235,27 @@ export class EngineService {
     plane.material = material;
     myPlugin.isEnabled = true;
     // plane.material.wireframe = true;
+
+  }
+
+  async createSceneGridPluginAsync(): Promise<void> {
+    
+    const plane = MeshBuilder.CreatePlane('plane', {
+      size: 10
+    }, this.scene);
+    plane.rotate(new Vector3(1, 0, 0), Math.PI / 2);  // rotate 90 deg on X axis to use as ground plane
+
+    const material = new StandardMaterial('myMat', this.scene);
+    const texture = await EngineUtil.LoadTextureAsync('/assets/art/textures/dirt-tile.png', this.scene);
+    material.diffuseTexture = texture;
+
+    const myPlugin = new GridPluginMaterial(material);
+    myPlugin.cellSize = 1;
+    myPlugin.gradientSharpness = 25;
+    myPlugin.gridColor = new Color4(0, 0.4, 1, 0.20);
+
+    plane.material = material;
+    myPlugin.isEnabled = true;
 
   }
 
