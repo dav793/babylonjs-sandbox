@@ -10,6 +10,7 @@ uniform mat4 worldViewProjection;
 uniform sampler2D textureSampler;
 uniform vec2 uvStart;
 uniform vec2 uvEnd;
+uniform float cellSize;
 
 // Varying
 varying vec3 vPosition;

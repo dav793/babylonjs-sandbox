@@ -252,6 +252,7 @@ export class EngineService {
     const uvCoordinates = GroundTileLibrary.getTileUVs(GroundTileType.Mud_Debris);
     terrainMat.setVector2('uvStart', uvCoordinates.topLeft);
     terrainMat.setVector2('uvEnd', uvCoordinates.bottomRight);
+    terrainMat.setFloat('cellSize', cellSize);
 
     plane.material = terrainMat;
   }
