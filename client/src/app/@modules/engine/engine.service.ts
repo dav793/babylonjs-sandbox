@@ -5,13 +5,15 @@ import { BehaviorSubject } from 'rxjs';
 // import * as BABYLON from '@babylonjs/core/Legacy/legacy';
 
 // ...or import tree-shakeable modules individually
-import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera } from '@babylonjs/core';
+import { SceneLoader, HemisphericLight, Vector3, Vector4, Color3, ShaderMaterial, Camera, MeshBuilder, Tools, Vector2 } from '@babylonjs/core';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Inspector } from '@babylonjs/inspector';
+
+import { GroundTileLibrary, GroundTileType } from './ground-tile-library';
 
 @Injectable()
 export class EngineService {
@@ -122,40 +124,12 @@ export class EngineService {
   }
 
   async createDioramaModelAsync(): Promise<void> {
-    const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Prop_Diorama_01.glb', this.scene);
-
-    const myMaterial_base = new StandardMaterial('MatDiorama.base', this.scene);
-    myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
-    models.meshes[2].material = myMaterial_base;
-
-    // const customShaderMaterial = new ShaderMaterial('MatCustomShader', this.scene, '/assets/shaders/pixellated', {
-    //   attributes: ["position", "normal", "uv"],
-    //   uniforms: ["worldViewProjection"]
-    // });
-
-    // const resX = this.width / this.pixelSize;
-    // const resY = this.height / this.pixelSize;
-    // customShaderMaterial.setVector4("resolution", new Vector4(
-    //   resX,
-    //   resY,
-    //   1 / resX,
-    //   1 / resY
-    // ));
-
-    // customShaderMaterial.setFloat("normalEdgeStrength", this.normalEdgeStrength);
-    // customShaderMaterial.setFloat("depthEdgeStrength", this.depthEdgeStrength);
-
-    // const myDiffuseTex = new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false);
-    // const myDepthTex = this._renderer.getDepthMap();
-    // const myNormalTex = new Texture('/assets/art/textures/Texture_01_normal.png', this.scene, true, false);
-    // customShaderMaterial.setTexture("tDiffuse", myDiffuseTex);
-    // customShaderMaterial.setTexture("tDepth", myDepthTex);
-    // customShaderMaterial.setTexture("tNormal", myNormalTex);
-
-    // customShaderMaterial.setTexture("textureSampler", new Texture('/assets/art/textures/Texture_01.png', this.scene, true, false));
     
-
-
+    // diorama examples
+    // const models = await SceneLoader.ImportMeshAsync('', '/assets/art/models/', 'Prop_Diorama_01.glb', this.scene);
+    // const myMaterial_base = new StandardMaterial('MatDiorama.base', this.scene);
+    // myMaterial_base.diffuseColor = new Color3(0.5, 0.5, 0.5);  
+    // models.meshes[2].material = myMaterial_base;
 
     // this._customShaderMaterial = this.createShaderMaterial_Basic();
     // this._customShaderMaterial = this.createShaderMaterial_BlackAndWhite();
@@ -163,9 +137,11 @@ export class EngineService {
     // this._customShaderMaterial = this.createShaderMaterial_Phong();
     // this._customShaderMaterial = this.createShaderMaterial_Discard();
     // this._customShaderMaterial = this.createShaderMaterial_Wave();
-    this._customShaderMaterial = this.createShaderMaterial_Fresnel();
+    // this._customShaderMaterial = this.createShaderMaterial_Fresnel();
+    // models.meshes[1].material = this._customShaderMaterial;
 
-    models.meshes[1].material = this._customShaderMaterial;
+    // ground tile examples
+    this.createSceneTileUvs();
 
   }
 
@@ -259,6 +235,25 @@ export class EngineService {
     customShaderMaterial.setVector3("cameraPosition", this.camera.position);
 
     return customShaderMaterial;
+  }
+
+  createSceneTileUvs(): void {
+    const cellSize = 1;
+    const plane = MeshBuilder.CreatePlane('terrain', { size: cellSize }, this.scene);
+    plane.rotate(new Vector3(1, 0, 0), Tools.ToRadians(90));
+
+    const terrainTex = new Texture('/assets/art/textures/terrain-atlas1.png', this.scene, false, false, Texture.BILINEAR_SAMPLINGMODE);
+    const terrainMat = new ShaderMaterial('MatTerrain', this.scene, '/assets/shaders/terraincell', {
+      attributes: ['position', 'normal', 'uv'],
+      uniforms: ['worldViewProjection']
+    });
+    terrainMat.setTexture('textureSampler', terrainTex);
+    
+    const uvCoordinates = GroundTileLibrary.getTileUVs(GroundTileType.Mud_Debris);
+    terrainMat.setVector2('uvStart', uvCoordinates.topLeft);
+    terrainMat.setVector2('uvEnd', uvCoordinates.bottomRight);
+
+    plane.material = terrainMat;
   }
 
 }
