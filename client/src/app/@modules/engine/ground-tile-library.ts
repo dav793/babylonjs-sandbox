@@ -9,20 +9,29 @@ export class GroundTileLibrary {
 
     static getTileUVs(type: GroundTileType): UV_Coordinates {
 
+        const borderPadding = 1.8;
         const colIndex = Math.floor(type / GroundTileLibrary._columnLength);
         const rowIndex = type % GroundTileLibrary._columnLength;
 
         const topLeft = new Vector2(
-            (colIndex * GroundTileLibrary._tileSize + 1) / GroundTileLibrary._textureSizeX,
-            (rowIndex * GroundTileLibrary._tileSize + 1) / GroundTileLibrary._textureSizeY
+            (colIndex * GroundTileLibrary._tileSize + borderPadding) / GroundTileLibrary._textureSizeX,
+            (rowIndex * GroundTileLibrary._tileSize + borderPadding) / GroundTileLibrary._textureSizeY
         );
 
         const bottomRight = new Vector2(
-            ((colIndex+1) * GroundTileLibrary._tileSize - 1) / GroundTileLibrary._textureSizeX,
-            ((rowIndex+1) * GroundTileLibrary._tileSize - 1) / GroundTileLibrary._textureSizeY,
+            ((colIndex+1) * GroundTileLibrary._tileSize - borderPadding) / GroundTileLibrary._textureSizeX,
+            ((rowIndex+1) * GroundTileLibrary._tileSize - borderPadding) / GroundTileLibrary._textureSizeY,
         );
 
         return { topLeft, bottomRight };
+    }
+
+    static getTileUVsArray(): UV_Coordinates[] {
+        return Object.keys(GroundTileType)
+            .map(key => {
+                return !isNaN( parseInt(key) ) ? GroundTileLibrary.getTileUVs(key as any) : false;
+            })
+            .filter(value => value) as UV_Coordinates[];
     }
 
 }
