@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { EngineModule } from './@modules/engine/engine.module';
 import { GameModule } from './@modules/game/game.module';
+import { ScenesModule } from './@modules/scenes/scenes.module';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -15,6 +16,7 @@ import { AppComponent } from './app.component';
     BrowserModule,
     EngineModule,
     GameModule,
+    ScenesModule,
     AppRoutingModule
   ],
   providers: [],
