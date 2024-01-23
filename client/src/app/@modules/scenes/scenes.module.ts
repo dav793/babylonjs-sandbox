@@ -4,15 +4,18 @@ import { CommonModule } from '@angular/common';
 import { GameModule } from '../game/game.module';
 import { GridSingleSceneComponent } from './grid-single-scene/grid-single-scene.component';
 import { GridNaiveSceneComponent } from './grid-naive-scene/grid-naive-scene.component';
+import { CharacterSceneComponent } from './character-scene/character-scene.component';
 
 @NgModule({
   declarations: [
     GridSingleSceneComponent,
-    GridNaiveSceneComponent
+    GridNaiveSceneComponent,
+    CharacterSceneComponent
   ],
   exports: [
     GridSingleSceneComponent,
-    GridNaiveSceneComponent
+    GridNaiveSceneComponent,
+    CharacterSceneComponent
   ],
   imports: [
     CommonModule,

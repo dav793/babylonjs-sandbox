@@ -1,17 +1,22 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { MetricsComponent } from './metrics/metrics.component';
+import { ControlsComponent } from './controls/controls.component';
 
 @NgModule({
   declarations: [
-    MetricsComponent
+    MetricsComponent,
+    ControlsComponent
   ],
   exports: [
-    MetricsComponent
+    MetricsComponent,
+    ControlsComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    FormsModule
   ]
 })
 export class GameModule { }
