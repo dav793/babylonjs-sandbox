@@ -71,7 +71,7 @@ export class GridNaiveSceneComponent {
 
     // create tiles
     const cellSize = 1;
-    const gridSize = 30;
+    const gridSize = 128;
 
     const terrainTex = new Texture('/assets/art/textures/terrain-atlas1.png', this.engineService.scene, false, false, Texture.BILINEAR_SAMPLINGMODE);
 

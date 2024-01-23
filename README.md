@@ -104,3 +104,4 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
     ```
 
     What it does: Changes instance of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
+    

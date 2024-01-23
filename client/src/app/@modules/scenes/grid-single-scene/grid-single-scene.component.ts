@@ -1,11 +1,12 @@
 import { Component, ViewChild, ElementRef, NgZone } from '@angular/core';
-import { HemisphericLight, Vector3, ShaderMaterial, MeshBuilder, Tools, StorageBuffer } from '@babylonjs/core';
+import { HemisphericLight, Vector3, ShaderMaterial, MeshBuilder, Tools, UniformBuffer } from '@babylonjs/core';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
 import { Subject, Observable } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
 import { GroundTileLibrary, GroundTileType, UV_Coordinates } from 'src/app/@shared/util/ground-tile-library';
+import { buffer } from 'node_modules.bk/get-stream';
 
 @Component({
   selector: 'app-grid-single-scene',
@@ -85,7 +86,7 @@ export class GridSingleSceneComponent {
 
     // create procedural grid
     const cellSize = 1;
-    const gridSize = 30;  // going over 30 causes error "FRAGMENT shader uniforms count exceeds MAX_FRAGMENT_UNIFORM_VECTORS(1024):
+    const gridSize = 128;  // going over 30 causes error "FRAGMENT shader uniforms count exceeds MAX_FRAGMENT_UNIFORM_VECTORS(1024):
                           // @todo: look into using uniform buffers or storage buffers
                           // https://doc.babylonjs.com/typedoc/classes/BABYLON.ShaderMaterial#setUniformBuffer
                           // https://doc.babylonjs.com/typedoc/classes/BABYLON.ShaderMaterial#setStorageBuffer
@@ -107,8 +108,16 @@ export class GridSingleSceneComponent {
     for (let row of tiles) {
       tilesData = tilesData.concat(row);
     }
-    // const tilesDataBuffer = new StorageBuffer(this.engineService.engine, tilesData.length * 4);  // need babylon version >= 6.39.0?
-    // tilesDataBuffer.update(tilesData);
+    
+    // convert to uniform buffer
+    const tilesDataBuffer = new UniformBuffer(this.engineService.engine);
+    tilesDataBuffer.addUniform('tiles', 1, tilesData.length);
+    const tilesDataBufferContent = new Float32Array(tilesData.length);
+    for (let i = 0; i < tilesData.length; ++i) {
+      tilesDataBufferContent[i] = tilesData[i];
+    }
+    tilesDataBuffer.updateUniformArray('tiles', tilesDataBufferContent, tilesDataBufferContent.length);
+    tilesDataBuffer.update();
 
     // prepare data for shader
     const uvCoordinates: UV_Coordinates[] = GroundTileLibrary.getTileUVsArray();
@@ -120,6 +129,22 @@ export class GridSingleSceneComponent {
       uvEnd = uvEnd.concat([entry.bottomRight.x, entry.bottomRight.y]);
     }
 
+    // convert to uniform buffers
+    const uvStartBuffer = new UniformBuffer(this.engineService.engine);
+    const uvEndBuffer = new UniformBuffer(this.engineService.engine);
+    uvStartBuffer.addUniform('uvStart', 1, uvStart.length);
+    uvEndBuffer.addUniform('uvEnd', 1, uvEnd.length);
+    const uvStartBufferContent = new Float32Array(uvStart.length);
+    const uvEndBufferContent = new Float32Array(uvEnd.length);
+    for (let i = 0; i < uvCoordinates.length*2; ++i) {
+      uvStartBufferContent[i] = uvStart[i];
+      uvEndBufferContent[i] = uvEnd[i];
+    }
+    uvStartBuffer.updateUniformArray('uvStart', uvStartBufferContent, uvStartBufferContent.length);
+    uvStartBuffer.update();
+    uvEndBuffer.updateUniformArray('uvEnd', uvEndBufferContent, uvEndBufferContent.length);
+    uvEndBuffer.update();
+
     // create mesh and setup shader
     const plane = MeshBuilder.CreatePlane('terrain', { size: gridSize*cellSize }, this.engineService.scene);
     plane.rotate(new Vector3(1, 0, 0), Tools.ToRadians(90));
@@ -128,15 +153,19 @@ export class GridSingleSceneComponent {
     const terrainMat = new ShaderMaterial('MatTerrain', this.engineService.scene, '/assets/shaders/terraingridcell', {
       attributes: ['position', 'normal', 'uv'],
       uniforms: ['worldViewProjection'],
-      // storageBuffers: ['tilesBuffer']
+      uniformBuffers: ['tilesBuffer', 'uvStartBuffer', 'uvEndBuffer']
     });
     terrainMat.setDefine('TILE_TYPES_LENGTH', tileTypesLength.toString());
     terrainMat.setDefine('GRID_SIZE', gridSize.toString());
     terrainMat.setDefine('CELL_SIZE', cellSize.toString());
     terrainMat.setTexture('textureSampler', terrainTex);
-    terrainMat.setFloats('tiles', tilesData);
-    terrainMat.setFloats('uvStart', uvStart);
-    terrainMat.setFloats('uvEnd', uvEnd);
+    // terrainMat.setFloats('tiles', tilesData);
+    // terrainMat.setFloats('uvStart', uvStart);
+    // terrainMat.setFloats('uvEnd', uvEnd);
+
+    terrainMat.setUniformBuffer('tilesBuffer', tilesDataBuffer);
+    terrainMat.setUniformBuffer('uvStartBuffer', uvStartBuffer);
+    terrainMat.setUniformBuffer('uvEndBuffer', uvEndBuffer);
 
     plane.material = terrainMat;
 

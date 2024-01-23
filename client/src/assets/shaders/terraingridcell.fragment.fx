@@ -5,9 +5,24 @@ varying vec3 vPosition;
 varying vec2 vUV;
 
 uniform sampler2D textureSampler;
-uniform float[GRID_SIZE * GRID_SIZE] tiles;     // index of tile type for every tile
-uniform float[TILE_TYPES_LENGTH * 2] uvStart;   // uv coordinates of where each tile type starts in the texture
-uniform float[TILE_TYPES_LENGTH * 2] uvEnd;     // uv coordinates of where each tile type ends in the texture
+// uniform float[GRID_SIZE * GRID_SIZE] tiles;     // index of tile type for every tile
+// uniform float[TILE_TYPES_LENGTH * 2] uvStart;   // uv coordinates of where each tile type starts in the texture
+// uniform float[TILE_TYPES_LENGTH * 2] uvEnd;     // uv coordinates of where each tile type ends in the texture
+
+uniform tilesBuffer
+{
+    float tiles[GRID_SIZE * GRID_SIZE];
+};
+
+uniform uvStartBuffer
+{
+    float uvStart[TILE_TYPES_LENGTH * 2];
+};
+
+uniform uvEndBuffer
+{
+    float uvEnd[TILE_TYPES_LENGTH * 2];
+};
 
 // @todo: optimization (precompute uvRange)
 vec2 getUVOffset(vec2 normalizedPosition, vec2 uvStart, vec2 uvEnd) {
