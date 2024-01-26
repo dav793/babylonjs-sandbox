@@ -33,7 +33,7 @@ export class EngineService {
 
   async setupEngine(canvas: ElementRef<HTMLCanvasElement>) {
     this.canvas = canvas;
-    this.engine = new Engine(canvas.nativeElement, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false });
+    this.engine = new Engine(canvas.nativeElement, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false });
     this.scene = new Scene(this.engine);
   }
 
