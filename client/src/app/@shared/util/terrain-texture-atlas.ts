@@ -32,18 +32,7 @@ export class TerrainTextureAtlas {
     }
 
     static getTileUVsArray(type: TerrainTextureType): UV_Corner[] {
-
-        let typeMap: any;
-        switch(type) {
-            case TerrainTextureType.Grass:
-                typeMap = GrassTileType;
-                break;
-            case TerrainTextureType.Dirt:
-                typeMap = DirtTileType;
-                break;
-        }
-        if (!typeMap)
-            throw new Error(`Terrain texture type ${type} does not exist`);
+        const typeMap: any = TerrainTextureAtlas.getTileType(type); 
 
         const arrLength = TerrainTextureAtlas._rowLength * TerrainTextureAtlas._columnLength;
         const arr: UV_Corner[] = Array(arrLength).fill(-1);
@@ -56,6 +45,22 @@ export class TerrainTextureAtlas {
         return arr;
     }
 
+    static getTileType(textureType: TerrainTextureType): TerrainTileType{
+        let typeMap: any;
+        switch(textureType) {
+            case TerrainTextureType.Grass:
+                typeMap = GrassTileType;
+                break;
+            case TerrainTextureType.Dirt:
+                typeMap = DirtTileType;
+                break;
+        }
+        if (!typeMap)
+            throw new Error(`Terrain texture type ${textureType} does not exist`);
+
+        return typeMap;
+    }
+
     static getTextureUrl(type: TerrainTextureType): string {
         switch(type) {
             case TerrainTextureType.Grass:
@@ -64,6 +69,24 @@ export class TerrainTextureAtlas {
                 return '/assets/art/textures/terrain/Texture_Tiles_Dirt.png';
         }
         throw new Error(`Terrain texture type ${type} does not exist`);
+    }
+
+    static tileTypeIsBaseType(tileType: any, textureType: TerrainTextureType): boolean {
+        if (tileType === null)
+            return false;
+        
+        const typeMap: any = TerrainTextureAtlas.getTileType(textureType); 
+        
+        const borderTypeValues = Object.keys(TileBorderType)
+            .filter(key => isNaN((TileBorderType as any)[key]))
+            .map(val => parseInt(val));
+
+        const baseTypeValues = Object.keys(typeMap)
+            .filter(key => isNaN(typeMap[key]))
+            .map(val => parseInt(val))
+            .filter(val => !borderTypeValues.includes(val));    // exclude borders
+              
+        return baseTypeValues.includes(tileType);
     }
 
 }
@@ -92,7 +115,8 @@ export enum GrassTileType {
     Grass_Border_TRB = 20,
     Grass_Border_RBL = 21,
     Grass_Border_BLT = 22,
-    Grass_Border_LTR = 23
+    Grass_Border_LTR = 23,
+    Grass_Border_TRBL = 24
 }
 
 export enum DirtTileType {
@@ -113,7 +137,28 @@ export enum DirtTileType {
     Dirt_Border_TRB = 20,
     Dirt_Border_RBL = 21,
     Dirt_Border_BLT = 22,
-    Dirt_Border_LTR = 23
+    Dirt_Border_LTR = 23,
+    Dirt_Border_TRBL = 24
 }
 
 export type TerrainTileType = GrassTileType | DirtTileType | null;
+
+export enum TileBorderType {
+    T = 8,
+    R = 9,
+    B = 10,
+    L = 11,
+    CTR = 12,
+    CRB = 13,
+    CBL = 14,
+    CLT = 15,
+    TR = 16,
+    RB = 17,
+    BL = 18,
+    LT = 19,
+    TRB = 20,
+    RBL = 21,
+    BLT = 22,
+    LTR = 23,
+    TRBL = 24
+}

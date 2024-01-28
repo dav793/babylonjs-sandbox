@@ -10,9 +10,12 @@ import {
   TerrainTextureType, 
   TerrainTileType, 
   GrassTileType, 
-  DirtTileType 
+  DirtTileType,
+  TileBorderType
 } from 'src/app/@shared/util/terrain-texture-atlas';
-import { EngineUtil } from 'src/app/@shared/util/engine-util';
+import { CardinalDirection, EngineUtil } from 'src/app/@shared/util/engine-util';
+import { GridUtil } from 'src/app/@shared/util/grid-util';
+import { Util } from 'src/app/@shared/util/util';
 
 @Component({
   selector: 'app-thin-grid-scene',
@@ -23,9 +26,10 @@ import { EngineUtil } from 'src/app/@shared/util/engine-util';
 export class ThinGridSceneComponent {
 
   @ViewChild('canvas', { static: true }) private canvas: ElementRef<HTMLCanvasElement>;
-  tileSize = 1;
-  gridWidth = 3;
-  gridHeight = 3;
+
+  tileSize: number;
+  gridWidth: number;
+  gridHeight: number;
 
   private _destroy$ = new Subject<void>();
 
@@ -79,8 +83,59 @@ export class ThinGridSceneComponent {
     camera.attachControl(this.canvas.nativeElement, true);
     this.engineService.setCamera(camera);
 
+    // this.createTerrain_Manual();
+    this.createTerrain_Generated();
+    // this.createTerrain_Test();
+  }
+
+  createTerrain_Test() {
+    this.tileSize = 1;
+    this.gridWidth = 3;
+    this.gridHeight = 3;
+
     const terrainLayer_Dirt: TerrainGridLayerParams = {
-      gridSize: new Vector2(3, 3),
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
+      tileSize: this.tileSize,
+      origin: new Vector2(0, 0),
+      order: 0,
+      textureType: TerrainTextureType.Dirt,
+      tiles: [
+        [[DirtTileType.Dirt_0], [DirtTileType.Dirt_0], [DirtTileType.Dirt_0]],
+        [[DirtTileType.Dirt_0], [DirtTileType.Dirt_0], [DirtTileType.Dirt_0]],
+        [[DirtTileType.Dirt_0], [DirtTileType.Dirt_0], [DirtTileType.Dirt_0]],
+      ]
+    };
+
+    const terrainLayer_Grass: TerrainGridLayerParams = {
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
+      tileSize: this.tileSize,
+      origin: new Vector2(0, 0),
+      order: 1,
+      textureType: TerrainTextureType.Grass,
+      tiles: [
+        [null, null, [GrassTileType.Grass_0]],
+        [null, null, null],
+        [null, [GrassTileType.Grass_0], [GrassTileType.Grass_0]]
+      ]
+    };
+
+    this.generateLayerBorders(terrainLayer_Grass);
+
+    const layerEntities: { [key: string]: TerrainTileEntity[] } = {};
+    layerEntities[TerrainTextureType.Dirt] = this.createTerrainLayerEntities(terrainLayer_Dirt);
+    layerEntities[TerrainTextureType.Grass] = this.createTerrainLayerEntities(terrainLayer_Grass);
+
+    const sortedTileEntities: SortedTerrainTileEntities = this.sortEntities(layerEntities);
+    this.createThinMeshes(sortedTileEntities);
+  }
+
+  createTerrain_Manual() {
+    this.tileSize = 1;
+    this.gridWidth = 3;
+    this.gridHeight = 3;
+
+    const terrainLayer_Dirt: TerrainGridLayerParams = {
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
       tileSize: this.tileSize,
       origin: new Vector2(0, 0),
       order: 0,
@@ -93,19 +148,22 @@ export class ThinGridSceneComponent {
     };
 
     const terrainLayer_Grass: TerrainGridLayerParams = {
-      gridSize: new Vector2(3, 3),
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
       tileSize: this.tileSize,
       origin: new Vector2(0, 0),
       order: 1,
       textureType: TerrainTextureType.Grass,
       tiles: [
-        [[GrassTileType.Grass_Border_B], [GrassTileType.Grass_Border_CBL, GrassTileType.Grass_Border_R], [GrassTileType.Grass_0]],
-        [[GrassTileType.Grass_1], [GrassTileType.Grass_Border_RBL], [GrassTileType.Grass_0]],
+        // [[GrassTileType.Grass_Border_T], [GrassTileType.Grass_Border_CLT, GrassTileType.Grass_Border_R], [GrassTileType.Grass_0]],
+        // [[GrassTileType.Grass_1], [GrassTileType.Grass_Border_LTR], [GrassTileType.Grass_0]],
+        // [[GrassTileType.Grass_2], [GrassTileType.Grass_0], [GrassTileType.Grass_2]]
+        [null, null, [GrassTileType.Grass_0]],
+        [[GrassTileType.Grass_1], null, [GrassTileType.Grass_0]],
         [[GrassTileType.Grass_2], [GrassTileType.Grass_0], [GrassTileType.Grass_2]]
       ]
     };
 
-    // @todo: generate borders automatically
+    this.generateLayerBorders(terrainLayer_Grass);
 
     const layerEntities: { [key: string]: TerrainTileEntity[] } = {};
     layerEntities[TerrainTextureType.Dirt] = this.createTerrainLayerEntities(terrainLayer_Dirt);
@@ -113,7 +171,268 @@ export class ThinGridSceneComponent {
 
     const sortedTileEntities: SortedTerrainTileEntities = this.sortEntities(layerEntities);
     this.createThinMeshes(sortedTileEntities);
+  }
 
+  createTerrain_Generated() {
+    this.tileSize = 1;
+    this.gridWidth = 64;
+    this.gridHeight = 64;
+    // this.gridWidth = 3;
+    // this.gridHeight = 3;
+
+    const terrainLayer_Dirt: TerrainGridLayerParams = {
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
+      tileSize: this.tileSize,
+      origin: new Vector2(0, 0),
+      order: 0,
+      textureType: TerrainTextureType.Dirt,
+      tiles: []
+    };
+
+    const terrainLayer_Grass: TerrainGridLayerParams = {
+      gridSize: new Vector2(this.gridWidth, this.gridHeight),
+      tileSize: this.tileSize,
+      origin: new Vector2(0, 0),
+      order: 1,
+      textureType: TerrainTextureType.Grass,
+      tiles: []
+    };
+
+    // generate base tile maps
+    terrainLayer_Dirt.tiles = Array(this.gridHeight).fill(null).map(() => Array(this.gridWidth).fill(null));
+    terrainLayer_Grass.tiles = Array(this.gridHeight).fill(null).map(() => Array(this.gridWidth).fill(null));
+
+    for (let y = 0; y < this.gridHeight; ++y) {
+      for (let x = 0; x < this.gridWidth; ++x) {
+        const textureType = Util.getRandomIntInRange(0, 1);
+        
+        if (textureType === 0) {        // dirt
+          const tileType = Util.getRandomIntInRange(0, 1);
+          terrainLayer_Dirt.tiles[y][x] = [tileType];
+        }
+        else if (textureType === 1) {   // grass
+          const tileType = Util.getRandomIntInRange(0, 2);
+          terrainLayer_Grass.tiles[y][x] = [tileType];
+        }
+      }
+    }
+
+    // generate border tiles
+    this.generateLayerBorders(terrainLayer_Grass);
+
+    // create thin meshes
+    const layerEntities: { [key: string]: TerrainTileEntity[] } = {};
+    layerEntities[TerrainTextureType.Dirt] = this.createTerrainLayerEntities(terrainLayer_Dirt);
+    layerEntities[TerrainTextureType.Grass] = this.createTerrainLayerEntities(terrainLayer_Grass);
+
+    const sortedTileEntities: SortedTerrainTileEntities = this.sortEntities(layerEntities);
+    this.createThinMeshes(sortedTileEntities);
+  }
+
+  generateLayerBorders(layer: TerrainGridLayerParams): void {
+    for (let y = 0; y < layer.tiles.length; ++y) {
+      for (let x = 0; x < layer.tiles[y].length; ++x) {
+        const borders = this.generateTileBorderTypes(new Vector2(x, y), layer);
+        if (borders.length === 0)
+          continue;
+        
+        layer.tiles[y][x] = layer.tiles[y][x] === null ? borders as any[] : layer.tiles[y][x].concat(borders as any);
+      }  
+    }
+  }
+
+  generateTileBorderTypes(tileIndex: Vector2, layer: TerrainGridLayerParams): TileBorderType[] {
+    let isBaseTile;
+    if (layer.tiles[tileIndex.y][tileIndex.x] === null)
+      isBaseTile = false;
+    else
+      isBaseTile = layer.tiles[tileIndex.y][tileIndex.x]
+        .reduce((acc, cur) => acc && TerrainTextureAtlas.tileTypeIsBaseType(cur, layer.textureType), true);
+    if (isBaseTile)
+      return [];
+
+    const neighborIndexMap: Vector2[][] = [
+      [ GridUtil.getIndexByDirection(tileIndex, CardinalDirection.NW, layer.gridSize),  GridUtil.getIndexByDirection(tileIndex, CardinalDirection.N, layer.gridSize), GridUtil.getIndexByDirection(tileIndex, CardinalDirection.NE, layer.gridSize) ],
+      [ GridUtil.getIndexByDirection(tileIndex, CardinalDirection.W, layer.gridSize),   tileIndex,                                                                    GridUtil.getIndexByDirection(tileIndex, CardinalDirection.E, layer.gridSize) ],
+      [ GridUtil.getIndexByDirection(tileIndex, CardinalDirection.SW, layer.gridSize),  GridUtil.getIndexByDirection(tileIndex, CardinalDirection.S, layer.gridSize), GridUtil.getIndexByDirection(tileIndex, CardinalDirection.SE, layer.gridSize) ]
+    ];
+
+    const baseTileMap: boolean[][] = [];
+    for (let y = 0; y < 3; ++y) {
+      const row: boolean[] = [];
+      for (let x = 0; x < 3; ++x) {
+        if (y === 1 && x === 1) {
+          row.push(null); // exclude origin tile
+          continue;
+        }
+        if (neighborIndexMap[y][x] === null) {
+          row.push(null); // exclude tiles out of bounds
+          continue;
+        }
+
+        const tileIdx = new Vector2(tileIndex.x + x-1, tileIndex.y + y-1);
+        let isBaseTile;
+        if (layer.tiles[tileIdx.y][tileIdx.x] === null)
+          isBaseTile = false;
+        else {
+          isBaseTile = layer.tiles[tileIdx.y][tileIdx.x]
+            .reduce((acc, cur) => acc && TerrainTextureAtlas.tileTypeIsBaseType(cur, layer.textureType), true);
+        }
+        row.push(isBaseTile);
+      }
+      baseTileMap.push(row);
+    }
+    
+    // generate borders
+    const borders: TileBorderType[] = [];
+
+    //  In these diagrams, the center is always the origin tile/the one being evaluated/whose borders are being generated.
+    //  The other tiles represent the neighboring tiles in relation to the origin tile.
+    //
+    //  Each tile can have one of the following symbols, representing their tile type:
+    //  
+    //  A: Any tile type
+    //  O: The origin tile (the one being evaluated/whose borders are currently being generated)
+    //  T: Base tile (true)
+    //  F: Non-base tile (false)
+
+    /*
+     *  A|T|A
+     *  F|O|F
+     *  A|A|A
+     */
+    if (baseTileMap[0][1] && !baseTileMap[1][0] && !baseTileMap[1][2])
+      borders.push(TileBorderType.B);
+
+    /*
+     *  A|F|A
+     *  A|O|T
+     *  A|F|A
+     */
+    if (!baseTileMap[0][1] && baseTileMap[1][2] && !baseTileMap[2][1])
+      borders.push(TileBorderType.R);
+    
+    /*
+     *  A|A|A
+     *  F|O|F
+     *  A|T|A
+     */
+    if (!baseTileMap[1][0] && !baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.T);
+
+    /*
+     *  A|F|A
+     *  T|O|A
+     *  A|F|A
+     */
+    if (!baseTileMap[0][1] && baseTileMap[1][0] && !baseTileMap[2][1])
+      borders.push(TileBorderType.L);
+
+    /*
+     *  A|F|T
+     *  A|O|F
+     *  A|A|A
+     */
+    if (!baseTileMap[0][1] && baseTileMap[0][2] && !baseTileMap[1][2])
+      borders.push(TileBorderType.CRB);
+
+    /*
+     *  A|A|A
+     *  A|O|F
+     *  A|F|T
+     */
+    if (!baseTileMap[1][2] && !baseTileMap[2][1] && baseTileMap[2][2])
+      borders.push(TileBorderType.CTR);
+
+    /*
+     *  A|A|A
+     *  F|O|A
+     *  T|F|A
+     */
+    if (!baseTileMap[1][0] && baseTileMap[2][0] && !baseTileMap[2][1])
+      borders.push(TileBorderType.CLT);
+
+    /*
+     *  T|F|A
+     *  F|O|A
+     *  A|A|A
+     */
+    if (baseTileMap[0][0] && !baseTileMap[0][1] && !baseTileMap[1][0])
+      borders.push(TileBorderType.CBL);
+
+    /*
+     *  A|T|A
+     *  F|O|T
+     *  A|F|A
+     */
+    if (baseTileMap[0][1] && !baseTileMap[1][0] && baseTileMap[1][2] && !baseTileMap[2][1])
+      borders.push(TileBorderType.RB);
+
+    /*
+     *  A|F|A
+     *  F|O|T
+     *  A|T|A
+     */
+    if (!baseTileMap[0][1] && !baseTileMap[1][0] && baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.TR);
+
+    /*
+     *  A|F|A
+     *  T|O|F
+     *  A|T|A
+     */
+    if (!baseTileMap[0][1] && baseTileMap[1][0] && !baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.LT);
+
+    /*
+     *  A|T|A
+     *  T|O|F
+     *  A|F|A
+     */
+    if (baseTileMap[0][1] && baseTileMap[1][0] && !baseTileMap[1][2] && !baseTileMap[2][1])
+      borders.push(TileBorderType.BL);
+  
+    /*
+     *  A|T|A
+     *  F|O|T
+     *  A|T|A
+     */
+    if (baseTileMap[0][1] && !baseTileMap[1][0] && baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.TRB);
+
+    /*
+     *  A|F|A
+     *  T|O|T
+     *  A|T|A
+     */
+    if (!baseTileMap[0][1] && baseTileMap[1][0] && baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.LTR);
+
+    /*
+     *  A|T|A
+     *  T|O|F
+     *  A|T|A
+     */
+    if (baseTileMap[0][1] && baseTileMap[1][0] && !baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.BLT);
+
+    /*
+     *  A|T|A
+     *  T|O|T
+     *  A|F|A
+     */
+    if (baseTileMap[0][1] && baseTileMap[1][0] && baseTileMap[1][2] && !baseTileMap[2][1])
+      borders.push(TileBorderType.RBL);
+
+    /*
+     *  A|T|A
+     *  T|O|T
+     *  A|T|A
+     */
+    if (baseTileMap[0][1] && baseTileMap[1][0] && baseTileMap[1][2] && baseTileMap[2][1])
+      borders.push(TileBorderType.TRBL);
+
+    return borders;
   }
 
   createTerrainLayerEntities(layer: TerrainGridLayerParams): TerrainTileEntity[] {
@@ -219,10 +538,18 @@ export class ThinGridSceneComponent {
     for (let i = 0; i < tileEntity.indexes.length; ++i) {
       const idx = tileEntity.indexes[i];
       const byteOffset = i * 16;
-      Matrix.Translation(idx.x, idx.y/1000, idx.z).copyToArray(bufferMatrices, byteOffset);
+      Matrix.Translation(idx.x, idx.y/1000, -idx.z).copyToArray(bufferMatrices, byteOffset);
       // Matrix.Translation(idx.x, idx.z, idx.y).copyToArray(bufferMatrices, byteOffset);
     }
     tileMesh.thinInstanceSetBuffer('matrix', bufferMatrices, 16, true);
+
+    const position = new Vector3(
+      -this.gridWidth * this.tileSize / 2 + this.tileSize / 2, 
+      0, 
+      this.gridHeight * this.tileSize / 2 - this.tileSize / 2
+    );
+    tileMesh.position = position;
+
     tileEntity.mesh = tileMesh;
   }
 
