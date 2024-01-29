@@ -97,6 +97,12 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
     docker exec -it babylonjs-sandbox /bin/sh
     ```
 
+* Open shell on container `regen-editor`:
+
+    ```bash
+    docker exec -it regen-editor /bin/sh
+    ```
+
 * Idle run (keep containers open):
 
     ```bash
@@ -104,4 +110,3 @@ Set var `ENVIRONMENT` in `.env` file to either `production` or `development`.
     ```
 
     What it does: Changes instance of `command` in `docker-compose.yml` to `[ "tail", "-f", "/dev/null" ]`.
-    

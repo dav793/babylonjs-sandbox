@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { HemisphericLight, Vector3, ShaderMaterial, Mesh, MeshBuilder, Tools, Matrix, UniformBuffer, VertexData, StandardMaterial, Color3, Material, Vector2 } from '@babylonjs/core';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, takeUntil } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
 import { 
@@ -13,6 +13,7 @@ import {
   DirtTileType,
   TileBorderType
 } from 'src/app/@shared/util/terrain-texture-atlas';
+import { EditorSocketApiService } from '../../editor-api/editor-socket-api.service';
 import { CardinalDirection, EngineUtil } from 'src/app/@shared/util/engine-util';
 import { GridUtil } from 'src/app/@shared/util/grid-util';
 import { Util } from 'src/app/@shared/util/util';
@@ -35,6 +36,7 @@ export class ThinGridSceneComponent {
 
   constructor(
     private engineService: EngineService,
+    private editorSocketApiService: EditorSocketApiService,
     private ngZone: NgZone
   ) { }
 
@@ -47,11 +49,20 @@ export class ThinGridSceneComponent {
   }
 
   async setup() {
-    // setup + start engine
-    this.engineService.setupEngine( this.canvas );
-    await this.setupScene();
-    this.startRenderLoop();
-    // this.engineService.showInspector();
+
+    this.editorSocketApiService.connect().pipe(
+      takeUntil(this._destroy$)
+    ).subscribe(async isConnected => {
+      if (!isConnected)
+        throw new Error(`Failed to establish connection with editor socket server`);
+
+      // setup + start engine
+      this.engineService.setupEngine( this.canvas );
+      await this.setupScene();
+      this.startRenderLoop();
+      // this.engineService.showInspector();
+    });
+
   }
 
   startRenderLoop(): void {
@@ -84,8 +95,8 @@ export class ThinGridSceneComponent {
     this.engineService.setCamera(camera);
 
     // this.createTerrain_Manual();
-    this.createTerrain_Generated();
-    // this.createTerrain_Test();
+    // this.createTerrain_Generated();
+    this.createTerrain_Test();
   }
 
   createTerrain_Test() {
@@ -113,9 +124,13 @@ export class ThinGridSceneComponent {
       order: 1,
       textureType: TerrainTextureType.Grass,
       tiles: [
-        [null, null, [GrassTileType.Grass_0]],
-        [null, null, null],
-        [null, [GrassTileType.Grass_0], [GrassTileType.Grass_0]]
+        // [[GrassTileType.Grass_0], [GrassTileType.Grass_0], [GrassTileType.Grass_0]],
+        // [null, null, null],
+        // [[GrassTileType.Grass_0], [GrassTileType.Grass_0], [GrassTileType.Grass_0]]
+
+        [[GrassTileType.Grass_0], null, null],
+        [null, [GrassTileType.Grass_0], null],
+        [null, null, [GrassTileType.Grass_0]]
       ]
     };
 
@@ -505,7 +520,8 @@ export class ThinGridSceneComponent {
     ];
 
     const tileMesh = new Mesh('MeshGroundTile', this.engineService.scene);
-    const vertPosOffset = this.tileSize / 2;
+    const vertPosOffset = this.tileSize / 2 + 0.001;
+    // const vertPosOffset = this.tileSize / 2;
     const vertPosTopLeft = -vertPosOffset;
     const vertPosBottomRight = vertPosOffset;
     const vertPositions = [
@@ -538,7 +554,7 @@ export class ThinGridSceneComponent {
     for (let i = 0; i < tileEntity.indexes.length; ++i) {
       const idx = tileEntity.indexes[i];
       const byteOffset = i * 16;
-      Matrix.Translation(idx.x, idx.y/1000, -idx.z).copyToArray(bufferMatrices, byteOffset);
+      Matrix.Translation(idx.x*this.tileSize, idx.y*this.tileSize/1000, -idx.z*this.tileSize).copyToArray(bufferMatrices, byteOffset);
       // Matrix.Translation(idx.x, idx.z, idx.y).copyToArray(bufferMatrices, byteOffset);
     }
     tileMesh.thinInstanceSetBuffer('matrix', bufferMatrices, 16, true);

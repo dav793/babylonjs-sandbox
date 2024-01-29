@@ -14,6 +14,21 @@ services:
     ports:
       - "4200:4200"
     command: [ "tail", "-f", "/dev/null" ]
+
+  editor-server:
+    container_name: ${EDITOR_CONTAINER_NAME}
+    image: ${EDITOR_CONTAINER_NAME}
+    build: 
+      context: ${WORKING_DIR}
+      dockerfile: babylon-docker/Dockerfile.server
+    restart: "no"
+    network_mode: "bridge"
+    volumes:
+      - project-volume:/projects/babylonjs-sandbox
+    ports:
+      - "8082:8082"
+      - "8083:8083"
+    command: [ "tail", "-f", "/dev/null" ]
     
 volumes:
   project-volume:

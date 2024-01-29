@@ -14,7 +14,7 @@ export class TerrainTextureAtlas {
         if (type === null)
             return null;
 
-        const borderPadding = 1.8;
+        const borderPadding = 4;
         const colIndex = Math.floor(type / TerrainTextureAtlas._columnLength);
         const rowIndex = type % TerrainTextureAtlas._columnLength;
 

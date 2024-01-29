@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "outDir": "dist",
+        "sourceMap": true,
+        "removeComments": true,
+    },
+    "watchOptions": {
+        "watchFile": "dynamicPriorityPolling",
+        "watchDirectory": "dynamicPriorityPolling"
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "log",
+        "src/**/*.spec.ts"
+    ]
+}
