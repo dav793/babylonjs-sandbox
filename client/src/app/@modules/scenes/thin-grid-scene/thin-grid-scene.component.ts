@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { HemisphericLight, Vector3, ShaderMaterial, Mesh, MeshBuilder, Tools, Matrix, UniformBuffer, VertexData, StandardMaterial, Color3, Material, Vector2 } from '@babylonjs/core';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture';
-import { Subject, Observable, takeUntil } from 'rxjs';
+import { Subject, Observable, takeUntil, filter, first } from 'rxjs';
 
 import { EngineService } from '../../engine/engine.service';
 import { 
@@ -51,11 +51,10 @@ export class ThinGridSceneComponent {
   async setup() {
 
     this.editorSocketApiService.connect().pipe(
-      takeUntil(this._destroy$)
-    ).subscribe(async isConnected => {
-      if (!isConnected)
-        throw new Error(`Failed to establish connection with editor socket server`);
-
+      takeUntil(this._destroy$),
+      filter(isConnected => isConnected),
+      first()
+    ).subscribe(async () => {
       // setup + start engine
       this.engineService.setupEngine( this.canvas );
       await this.setupScene();
@@ -95,8 +94,8 @@ export class ThinGridSceneComponent {
     this.engineService.setCamera(camera);
 
     // this.createTerrain_Manual();
-    // this.createTerrain_Generated();
-    this.createTerrain_Test();
+    this.createTerrain_Generated();
+    // this.createTerrain_Test();
   }
 
   createTerrain_Test() {
@@ -128,9 +127,13 @@ export class ThinGridSceneComponent {
         // [null, null, null],
         // [[GrassTileType.Grass_0], [GrassTileType.Grass_0], [GrassTileType.Grass_0]]
 
-        [[GrassTileType.Grass_0], null, null],
+        // [[GrassTileType.Grass_0], null, null],
+        // [null, [GrassTileType.Grass_0], null],
+        // [null, null, [GrassTileType.Grass_0]]
+
+        [null, null, null],
         [null, [GrassTileType.Grass_0], null],
-        [null, null, [GrassTileType.Grass_0]]
+        [null, null, null]
       ]
     };
 
@@ -219,13 +222,13 @@ export class ThinGridSceneComponent {
 
     for (let y = 0; y < this.gridHeight; ++y) {
       for (let x = 0; x < this.gridWidth; ++x) {
-        const textureType = Util.getRandomIntInRange(0, 1);
+        const textureType = Util.getRandomIntInRange(0, 9);
         
-        if (textureType === 0) {        // dirt
+        if (textureType < 6) {        // dirt
           const tileType = Util.getRandomIntInRange(0, 1);
           terrainLayer_Dirt.tiles[y][x] = [tileType];
         }
-        else if (textureType === 1) {   // grass
+        else if (textureType >= 6) {   // grass
           const tileType = Util.getRandomIntInRange(0, 2);
           terrainLayer_Grass.tiles[y][x] = [tileType];
         }

@@ -7,7 +7,7 @@ export class EngineUtil {
             if (Cache.textures[url])
                 resolve(Cache.textures[url]);
             else {
-                const tex: Texture = new Texture(url, scene, true, false, Texture.TRILINEAR_SAMPLINGMODE, 
+                const tex: Texture = new Texture(url, scene, true, false, Texture.NEAREST_SAMPLINGMODE, 
                     () => {
                         Cache.textures[url] = tex;
                         if (options && options.hasAlpha)
